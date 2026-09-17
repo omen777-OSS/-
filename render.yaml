@@ -1,0 +1,20 @@
+# Render 一键部署配置
+# 使用方法：将此文件随代码一起推送到 GitHub，然后在 Render 中选择 "New Web Service"
+# 或者访问 https://render.com/deploy?repo=<你的GitHub仓库地址>
+services:
+  - type: web
+    name: zhizhentong-ai
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python start_server.py"
+    envVars:
+      - key: LLM_API_KEY
+        sync: false
+        # 部署后在 Render 仪表盘的 Environment 中填写你的 DeepSeek API 密钥
+      - key: LLM_BASE_URL
+        value: "https://api.deepseek.com/v1"
+      - key: LLM_MODEL
+        value: "deepseek-chat"
+    healthCheckPath: /api/health
+    autoDeploy: true
