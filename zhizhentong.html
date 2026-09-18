@@ -3,103 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>智诊通 · AI智能问诊模型（大模型版）</title>
+<title>小希医生</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E9F8E'/%3E%3Cpath d='M32 52s-16-10-16-22a8 8 0 0 1 14-5.2A8 8 0 0 1 48 30c0 12-16 22-16 22z' fill='white'/%3E%3C/svg%3E">
 <style>
   :root{
-    --primary:#0E9F8E; --secondary:#1E6FD9; --bg:#F4F8FA; --card:#fff;
-    --text:#1F2D3D; --sub:#5A6C7D; --line:#E3ECF2;
-    --low:#16A34A; --mid:#EA8C00; --high:#D93025;
+    --primary:#12B886; --primary-deep:#0CA678; --primary-dark:#099268;
+    --primary-light:#E6F9F0; --primary-lighter:#F2FBF6;
+    --bg:#F0F9F4; --card:#fff;
+    --text:#1B2E28; --sub:#5C7A6F; --line:#D9EDE4;
+    --low:#12B886; --mid:#F0A92E; --high:#E5484D; --crisis:#8B5CF6;
+    --shadow:0 4px 20px rgba(18,184,134,.10);
+    --shadow-lg:0 8px 30px rgba(18,184,134,.16);
+    --radius:18px;
   }
   *{box-sizing:border-box;}
+  button,input,select,textarea{font-family:inherit;}
+  html,body{height:100%;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-       background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
-  header{background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff;
-         padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
-         position:sticky;top:0;z-index:20;}
-  header h1{font-size:16px;margin:0;font-weight:600;display:flex;align-items:center;gap:8px;}
-  .btn{border:0;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;
-       background:rgba(255,255,255,.18);color:#fff;transition:.15s;}
-  .btn:hover{background:rgba(255,255,255,.28);}
-  .btn-primary{background:var(--primary);color:#fff;}
-  .btn-primary:hover{background:#0b8878;}
-  .btn:disabled{opacity:.45;cursor:not-allowed;}
-  .btn-sm{padding:4px 10px;font-size:12px;border-radius:6px;}
-  #modeTag{padding:4px 10px;font-size:12px;border-radius:6px;}
-  #resultCard{display:none;}
-  #resultCard.show{display:block;}
-  .banner-emg{background:var(--high);color:#fff;padding:12px 20px;font-weight:600;
-              display:none;position:sticky;top:52px;z-index:19;}
+       background:
+         radial-gradient(1200px 600px at 15% -10%, rgba(18,184,134,.14), transparent 60%),
+         radial-gradient(1000px 500px at 110% 0%, rgba(44,199,150,.10), transparent 55%),
+         var(--bg);
+       color:var(--text);font-size:14px;line-height:1.65;
+       -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  header{background:linear-gradient(120deg,var(--primary-dark),var(--primary) 55%,var(--primary-deep));
+         color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+         position:sticky;top:0;z-index:20;box-shadow:0 2px 16px rgba(9,146,104,.25);}
+  header h1{font-size:15px;margin:0;font-weight:700;display:flex;align-items:center;gap:9px;letter-spacing:.3px;
+         min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  header > div{flex-shrink:0;display:flex;gap:6px;align-items:center;}
+  header h1 svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));}
+  .btn{border:0;border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;
+       background:rgba(255,255,255,.16);color:#fff;transition:background .18s,transform .18s,box-shadow .18s;
+       backdrop-filter:blur(4px);-webkit-tap-highlight-color:transparent;}
+  .btn:hover{background:rgba(255,255,255,.30);transform:translateY(-1px);}
+  .btn:active{transform:translateY(0) scale(.98);}
+  .btn:focus-visible,.chip:focus-visible,.input-wrap input:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:2px;}
+  .icon-btn{width:34px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;}
+  .btn-primary{background:linear-gradient(120deg,var(--primary-deep),var(--primary));color:#fff;
+       box-shadow:0 3px 10px rgba(18,184,134,.35);}
+  .btn-primary:hover{background:linear-gradient(120deg,var(--primary-dark),var(--primary-deep));}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+  .btn-sm{padding:4px 11px;font-size:12px;border-radius:8px;}
+  #modeTag{padding:4px 11px;font-size:12px;border-radius:8px;background:rgba(255,255,255,.14);}
+  /* 诊断卡作为聊天消息（替代原底部独立卡片） */
+  .msg.card{position:sticky;top:0;z-index:10;}
+  .msg.card .bubble{max-width:88%;animation:fadeUp .35s ease;box-shadow:0 2px 10px rgba(18,184,134,.18);border:1px solid rgba(18,184,134,.2);}
+  .result-in-chat{line-height:1.65;color:var(--text);}
+  .result-in-chat .rc-head{margin-bottom:8px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .result-in-chat .rc-head .title{font-weight:750;color:var(--primary-deep);font-size:15px;}
+  .result-in-chat .rc-line{margin:0;padding:7px 0;border-top:1px solid rgba(217,237,228,.75);}
+  .result-in-chat .rc-line:first-of-type{border-top:0;padding-top:2px;}
+  .result-in-chat .rc-k{display:inline-block;min-width:42px;font-weight:700;color:var(--primary-deep);}
+  .result-in-chat .rc-disclaimer{font-size:11px;color:var(--sub);margin-top:8px;padding-top:7px;
+                                  border-top:1px dashed rgba(92,122,111,.2);opacity:.82;}
+  .result-in-chat.emg{background:#fff;border:1px solid rgba(229,72,77,.3);border-radius:12px;padding:12px;box-shadow:0 2px 10px rgba(229,72,77,.12);}
+  .result-in-chat.crisis,.result-in-chat.emg{overflow-wrap:anywhere;}
+  .result-in-chat.crisis{background:#fff;border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:12px;box-shadow:0 2px 10px rgba(139,92,246,.12);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .banner-emg{background:linear-gradient(120deg,#E5484D,#D92D33);color:#fff;padding:12px 20px;font-weight:600;
+              display:none;position:sticky;top:50px;z-index:19;box-shadow:0 4px 18px rgba(229,72,77,.35);}
   .banner-emg.show{display:block;animation:pulse 1.2s ease-in-out 3;}
+  .banner-emg.crisis{background:linear-gradient(120deg,#7A3DB8,#8B5CF6);box-shadow:0 4px 18px rgba(122,61,184,.35);}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.82}}
   .layout{display:grid;grid-template-columns:minmax(0,1fr);
-          gap:16px;padding:16px;max-width:820px;margin:0 auto;align-items:start;}
-  .card{background:var(--card);border-radius:14px;box-shadow:0 2px 12px rgba(14,60,80,.08);
-        padding:16px;margin-bottom:14px;}
-  .card h2{font-size:14px;margin:0 0 12px;color:var(--secondary);
-           display:flex;align-items:center;gap:6px;}
-  .chat-log{height:min(52vh,460px);overflow-y:auto;padding-right:4px;}
-  .msg{display:flex;margin-bottom:10px;}
+          gap:14px;padding:16px;max-width:1060px;margin:0 auto;align-items:start;}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+        padding:18px;margin-bottom:14px;border:1px solid rgba(217,237,228,.6);}
+  .card.has-result{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);
+                   grid-template-rows:auto minmax(0,1fr) auto auto;gap:0 14px;align-items:start;}
+  .card.has-result > h2{grid-column:1/-1;}
+  .card h2{font-size:13.5px;margin:0 0 12px;color:var(--primary-deep);
+           display:flex;align-items:center;gap:6px;font-weight:700;}
+  .card h2::before{content:"";width:4px;height:14px;border-radius:2px;background:linear-gradient(180deg,var(--primary),var(--primary-deep));}
+
+  /* ===== 聊天区（参考现代 Chat UI 模板） ===== */
+  .chat-log{height:min(56vh,480px);overflow-y:auto;padding:6px 6px 6px 2px;scroll-behavior:smooth;
+             overscroll-behavior:contain;scrollbar-gutter:stable;}
+  .card-slot{padding:0 2px 8px;min-width:0;}
+  .card.has-result .card-slot{grid-column:2;grid-row:2 / span 3;position:sticky;top:76px;
+                                align-self:start;max-height:calc(100vh - 104px);overflow-y:auto;
+                                padding-right:2px;scrollbar-gutter:stable;}
+  .card-slot .msg{margin-bottom:0;}
+  .card-slot .msg.card{position:static;align-items:flex-start;}
+  .card-slot .msg.card .bubble{max-width:100%;width:100%;font-size:12.5px;line-height:1.65;
+                                border-radius:14px;box-shadow:0 6px 18px rgba(18,184,134,.10);}
+  .card-slot::-webkit-scrollbar{width:4px;}
+  .card-slot::-webkit-scrollbar-thumb{background:#D5E9DF;border-radius:99px;}
+  .card.has-result .chat-log{grid-column:1;grid-row:2;}
+  .card.has-result .chips{grid-column:1;grid-row:3;}
+  .card.has-result .input-wrap{grid-column:1;grid-row:4;}
+  .chat-log::-webkit-scrollbar{width:5px;}
+  .chat-log::-webkit-scrollbar-thumb{background:#C8E6D8;border-radius:99px;}
+  .msg{display:flex;margin-bottom:14px;animation:msgIn .26s ease;contain:layout paint;}
+  .msg:last-child{margin-bottom:4px;}
+  @keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .msg.user{justify-content:flex-end;}
-  .bubble{max-width:82%;padding:9px 13px;border-radius:12px;white-space:pre-wrap;word-break:break-word;}
-  .msg.ai .bubble{background:#EEF7F5;border-left:3px solid var(--primary);}
-  .msg.user .bubble{background:var(--secondary);color:#fff;}
-  .msg.sys .bubble{background:#FFF7E6;border-left:3px solid var(--mid);font-size:12.5px;color:#8A5A00;}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
-  .chip{border:1px solid var(--line);background:#fff;color:var(--secondary);
-        border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;transition:.15s;}
-  .chip:hover{background:#EEF7F5;border-color:var(--primary);color:var(--primary);}
-  .chip:disabled{opacity:.4;cursor:not-allowed;}
-  .input-row{display:flex;gap:8px;}
-  .input-row input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 13px;
-                   font-size:14px;outline:none;font-family:inherit;}
-  .input-row input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(14,159,142,.12);}
-  .input-row input:disabled{background:#F0F2F5;cursor:not-allowed;}
-  .field-list{display:grid;gap:8px;}
-  .field{display:flex;gap:10px;font-size:13px;}
-  .field .k{color:var(--sub);min-width:64px;flex-shrink:0;}
+  .avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;margin-right:10px;
+          background:linear-gradient(135deg,var(--primary),var(--primary-deep));
+          display:flex;align-items:center;justify-content:center;color:#fff;
+          box-shadow:0 2px 8px rgba(18,184,134,.35);}
+  .msg.user .avatar{margin-right:0;margin-left:10px;background:linear-gradient(135deg,#35D0A0,#12B886);}
+  .bubble{max-width:76%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word;
+          font-size:13px;position:relative;line-height:1.6;box-shadow:0 1px 0 rgba(255,255,255,.45) inset;}
+  .msg.ai .bubble{background:var(--primary-lighter);border:1px solid rgba(18,184,134,.12);
+                  border-top-left-radius:6px;color:#234238;}
+  .msg.user .bubble{background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;
+                    border-top-right-radius:6px;box-shadow:0 3px 10px rgba(18,184,134,.28);}
+  .msg.sys{justify-content:center;}
+  .msg.sys .bubble{background:#FFF9EC;border:1px solid rgba(240,169,46,.25);font-size:12.5px;color:#8A6420;
+                   border-radius:12px;max-width:92%;}
+  .msg .time{display:block;font-size:11px;color:var(--sub);margin-top:5px;opacity:.75;}
+  .msg.user .time{text-align:right;color:#fff;opacity:.7;}
+  .msg.sys .time{display:none;}
+
+  /* 打字机加载动画 */
+  .typing{display:inline-flex;align-items:center;gap:4px;padding:4px 0;}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--primary);opacity:.4;animation:blink 1.2s infinite;}
+  .typing i:nth-child(2){animation-delay:.2s}
+  .typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.3;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;}
+  .chip{border:1.5px solid var(--line);background:var(--card);color:var(--primary-deep);
+        border-radius:999px;padding:7px 15px;font-size:13px;cursor:pointer;transition:.16s;font-weight:500;}
+  .chip:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);
+              transform:translateY(-1px);box-shadow:0 3px 8px rgba(18,184,134,.15);}
+  .chip:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+
+  /* 输入区 */
+  .input-wrap{background:rgba(242,251,246,.92);border:1.5px solid var(--line);border-radius:16px;
+              padding:6px;display:flex;gap:8px;transition:border-color .2s,box-shadow .2s,background .2s;margin-top:4px;
+              box-shadow:0 2px 10px rgba(18,184,134,.04);}
+  .input-wrap:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px rgba(18,184,134,.14);
+                           background:#fff;}
+  .input-wrap input{flex:1;border:0;background:transparent;border-radius:10px;padding:9px 12px;
+                   font-size:14px;outline:none;font-family:inherit;color:var(--text);caret-color:var(--primary-dark);}
+  .input-wrap input:focus{outline:none;}
+  .input-wrap input::placeholder{color:#9CC2B3;}
+  .input-wrap input:disabled{opacity:.6;cursor:not-allowed;}
+  .input-wrap .btn-primary{border-radius:12px;padding:9px 20px;font-weight:600;}
+
+  .field-list{display:grid;gap:9px;}
+  .field{display:flex;gap:10px;font-size:13px;padding:7px 10px;background:var(--primary-lighter);
+         border-radius:10px;border:1px solid rgba(18,184,134,.08);}
+  .field .k{color:var(--primary-deep);min-width:64px;flex-shrink:0;font-weight:600;}
   .field .v{color:var(--text);word-break:break-word;}
-  .field .v.empty{color:#B9C4CE;}
-  .log{height:150px;overflow-y:auto;background:#0F1B24;color:#8FD9C8;
-       border-radius:10px;padding:10px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;}
-  .log div{margin-bottom:3px;word-break:break-all;}
-  .log .warn{color:#FFC46B;} .log .err{color:#FF8A80;}
-  .result-card{border-left:4px solid var(--primary);}
-  .result-card.emg{border-left-color:var(--high);background:#FFF5F5;}
-  .badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:13px;font-weight:600;color:#fff;}
+  .field .v.empty{color:#A8C9BA;}
+  .result-card{border-left:4px solid var(--primary);overflow:hidden;}
+  .result-card.emg{border-left-color:var(--high);background:#FFF7F7;}
+  .badge{display:inline-block;padding:4px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;
+         box-shadow:0 2px 6px rgba(0,0,0,.12);}
   .badge.low{background:var(--low);} .badge.mid{background:var(--mid);} .badge.high{background:var(--high);}
-  .scorebar{height:8px;background:#E9EFF3;border-radius:99px;overflow:hidden;margin:8px 0;}
-  .scorebar i{display:block;height:100%;border-radius:99px;transition:width .6s ease;}
-  .dim{display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub);padding:2px 0;}
-  .emg-box{background:#fff;border:1px solid #F5C2C0;border-radius:10px;padding:12px;margin-top:10px;}
+  .zone{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:700;}
+  .zone.red{background:#FDECEC;color:#D92D33;border:1px solid #F5C2C0;}
+  .zone.yellow{background:#FFF9EC;color:#8A6420;border:1px solid rgba(240,169,46,.35);}
+  .zone.green{background:#E6F9F0;color:var(--primary-dark);border:1px solid rgba(18,184,134,.3);}
+  .zone.gray{background:#EEF1F4;color:var(--sub);border:1px solid #DDE3E8;}
+  .scorebar{height:9px;background:var(--primary-lighter);border-radius:99px;overflow:hidden;margin:8px 0;border:1px solid rgba(18,184,134,.1);}
+  .scorebar i{display:block;height:100%;border-radius:99px;transition:width .6s ease;
+              background:linear-gradient(90deg,var(--primary),var(--primary-deep));}
+  .dim{display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub);padding:3px 0;}
+  .emg-box{background:#fff;border:1.5px solid #F5C2C0;border-radius:12px;padding:12px;margin-top:10px;}
   .emg-box ul{margin:8px 0 0;padding-left:20px;} .emg-box li{margin-bottom:3px;}
   .emg-title{color:var(--high);font-weight:700;font-size:15px;}
-  .disclaimer{font-size:12px;color:var(--sub);border-top:1px dashed var(--line);
-              padding-top:10px;margin-top:12px;}
-  .modal-mask{position:fixed;inset:0;background:rgba(15,27,36,.5);display:none;
-              align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .crisis-title{color:#7A3DB8;font-weight:700;font-size:15px;}
+  /* ===== 结果卡（融入气泡的轻量结构） ===== */
+  .modal-mask{position:fixed;inset:0;background:rgba(11,42,33,.45);display:none;
+              align-items:center;justify-content:center;z-index:50;padding:16px;backdrop-filter:blur(3px);}
   .modal-mask.show{display:flex;}
-  .modal{background:#fff;border-radius:14px;padding:20px;width:min(520px,100%);max-height:88vh;overflow-y:auto;}
-  .modal label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px;}
-  .modal input,.modal select{width:100%;border:1px solid var(--line);border-radius:8px;
-                             padding:9px 12px;font-size:13px;outline:none;font-family:inherit;}
+  .modal{background:#fff;border-radius:18px;padding:20px;width:min(520px,100%);max-height:88vh;overflow-y:auto;
+         box-shadow:0 16px 50px rgba(11,42,33,.25);animation:fadeUp .3s ease;}
+  .modal label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px;font-weight:600;}
+  .modal input,.modal select{width:100%;border:1.5px solid var(--line);border-radius:10px;
+                             padding:9px 12px;font-size:13px;outline:none;font-family:inherit;transition:.15s;}
+  .modal input:focus,.modal select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(18,184,134,.12);}
   .modal .row{display:flex;gap:8px;}
-  .modal .hint{font-size:12px;color:#B36B00;background:#FFF7E6;padding:8px 10px;
-               border-radius:8px;margin-top:10px;}
+  .modal .hint{font-size:12px;color:#8A6420;background:#FFF9EC;padding:8px 10px;
+               border-radius:10px;margin-top:10px;border:1px solid rgba(240,169,46,.2);}
+  .preset-btn{border:1.5px solid var(--line);}
+  .preset-btn:hover{border-color:var(--primary);}
   @media (max-width:880px){
     header{padding:10px 14px;}
     header h1{font-size:14px;}
     header h1 svg{width:18px;height:18px;}
     .layout{padding:10px;gap:10px;}
-    .card{padding:14px;margin-bottom:10px;border-radius:12px;}
+    .card{padding:14px;margin-bottom:10px;border-radius:14px;}
+    .card.has-result{display:block;}
+    .card.has-result .card-slot{position:static;max-height:none;margin-top:10px;padding-top:12px;
+                                 border-top:1px solid var(--line);}
     .card h2{font-size:13px;margin-bottom:10px;}
     .chat-log{height:48vh;}
-    .bubble{max-width:88%;padding:10px 14px;font-size:15px;line-height:1.6;}
-    .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+    .bubble{max-width:85%;padding:10px 13px;font-size:13.5px;line-height:1.6;}
+    .avatar{width:30px;height:30px;}
+    .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;margin:10px -2px 2px;}
     .chip{padding:9px 16px;font-size:14px;white-space:nowrap;flex-shrink:0;}
-    .input-row input{font-size:16px;padding:12px 14px;}
-    .input-row .btn-primary{padding:12px 20px;font-size:15px;}
-    .modal{padding:16px;border-radius:12px;max-height:92vh;}
+    .input-wrap{padding:5px;}
+    .input-wrap input{font-size:16px;padding:10px 12px;}
+    .input-wrap .btn-primary{padding:11px 18px;font-size:15px;}
+    .modal{padding:16px;border-radius:14px;max-height:92vh;}
     .modal input,.modal select{font-size:16px;padding:11px 12px;}
     .modal label{font-size:13px;}
     .modal .hint{font-size:12px;}
@@ -113,11 +215,17 @@
     .disclaimer{font-size:12px;}
     body{font-size:15px;}
   }
+  @media (prefers-reduced-motion:reduce){
+    *{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+  }
   @media (max-width:480px){
     .chat-log{height:44vh;}
-    .bubble{max-width:90%;font-size:14.5px;}
+    .bubble{max-width:88%;font-size:13px;}
     .layout{padding:8px;}
     .card{padding:12px;}
+    .avatar{width:28px;height:28px;margin-right:8px;}
+    #modeTag{display:none;}
+    .btn-sm{padding:4px 9px;}
   }
 </style>
 </head>
@@ -132,32 +240,42 @@
   <div>
     <span id="modeTag" class="btn btn-sm" style="cursor:default">本地规则引擎</span>
     <button class="btn btn-sm" id="btnHelp" title="使用指南">帮助</button>
+    <button class="btn btn-sm icon-btn" id="btnSound" title="界面音效：开启" aria-label="界面音效：开启" aria-pressed="true">
+      <svg class="sound-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 5 6.5 9H3v6h3.5L11 19V5z"></path>
+        <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+        <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+      </svg>
+      <svg class="sound-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none">
+        <path d="M11 5 6.5 9H3v6h3.5L11 19V5z"></path>
+        <line x1="18" y1="9" x2="22" y2="15"></line>
+        <line x1="22" y1="9" x2="18" y2="15"></line>
+      </svg>
+    </button>
+    <button class="btn btn-sm" id="btnRestart" title="清空当前对话，重新开始一次问诊">重开</button>
     <button class="btn btn-sm" id="btnSettings">设置</button>
   </div>
 </header>
 <div class="banner-emg" id="emgBanner">
-  ⚠️ 已检测到危及生命的紧急情况 — 请立即停止活动，拨打 120 或就近急诊，不要自行驾车、不要在家服药观察
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:6px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>已检测到危及生命的紧急情况 — 请立即停止活动，拨打 120 或就近急诊，不要自行驾车、不要在家服药观察
 </div>
 <div class="layout">
   <div class="left-panel">
     <div class="card">
       <h2>对话问诊</h2>
+      <div class="card-slot" id="cardSlot" style="display:none;"></div>
       <div class="chat-log" id="chatLog"></div>
       <div class="chips" id="chips"></div>
-      <div class="input-row">
-        <input id="input" type="text" placeholder="请描述您最不舒服的地方…（请勿输入姓名/电话/身份证号）" autocomplete="off">
-        <button class="btn btn-primary" id="btnSend">发送</button>
+      <div class="input-wrap">
+        <input id="input" type="text" placeholder="请描述您最不舒服的地方…（请勿输入姓名/电话/身份证号）" autocomplete="off" aria-label="症状描述输入框">
+        <button class="btn btn-primary" id="btnSend" type="button">发送</button>
       </div>
-    </div>
-    <div class="card result-card" id="resultCard">
-      <h2>问诊结果与建议</h2>
-      <div id="resultBody" style="color:var(--sub);font-size:13px;">完成问诊后生成结果卡。</div>
     </div>
   </div>
 </div>
 <div class="modal-mask" id="settingsMask">
   <div class="modal">
-    <h2 style="margin-top:0;color:var(--secondary);">设置</h2>
+    <h2 style="margin-top:0;color:var(--primary-deep);">设置</h2>
     <label>运行方式</label>
     <select id="cfgMode">
       <option value="local">仅本地规则引擎（可离线）</option>
@@ -189,7 +307,7 @@
     </div>
     <div id="testResult" style="font-size:12.5px;margin-top:10px;"></div>
     <div class="hint">
-      ⚠️ 隐私提示：症状文本会发送至上述第三方大模型接口。本页不采集姓名、手机号、身份证号，
+      隐私提示：症状文本会发送至上述第三方大模型接口。本页不采集姓名、手机号、身份证号，
       不持久化对话记录，localStorage 仅保存本页配置。纯前端无法真正保密密钥，
       生产环境请使用后端代理 + 鉴权 + 限流 + 审计。
     </div>
@@ -201,20 +319,24 @@
 </div>
 <div class="modal-mask" id="helpMask">
   <div class="modal">
-    <h2 style="margin-top:0;color:var(--secondary);">使用指南</h2>
+    <h2 style="margin-top:0;color:var(--primary-deep);">使用指南</h2>
     <div style="font-size:13px;line-height:1.8;color:var(--text);">
-      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">🏥 智诊通是什么</div>
+      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">智诊通是什么</div>
       <p style="margin:0 0 14px;">AI 健康预问诊助手，通过对话了解您的不适，给出风险分层和就医建议。<b>不做诊断、不开处方</b>，急症请立即拨打 120。</p>
 
-      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">💬 如何使用</div>
+      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">如何使用</div>
       <ol style="margin:0 0 14px;padding-left:20px;">
         <li>在输入框描述您最不舒服的地方，或点击下方快捷选项</li>
-        <li>根据 AI 的追问，依次回答持续时间、难受程度、伴随症状等</li>
-        <li>问诊完成后，页面下方会生成风险结果卡，包含风险等级、健康建议和推荐科室</li>
+        <li>根据 AI 的追问，依次回答持续时间、难受程度、伴随症状等；顶部进度条会显示问诊完成到哪一步</li>
+        <li>问诊过程中会实时生成风险结果卡，包含风险等级、对应急诊分区、健康建议和推荐科室</li>
         <li>如出现胸痛、呼吸困难、意识不清等急症，系统会立即拦截并提示拨打 120</li>
+        <li>想为另一个人或重新描述时，点右上角「重开」即可开始新的问诊</li>
       </ol>
 
-      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">📱 手机端 / 其他电脑使用</div>
+      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">风险分层怎么看</div>
+      <p style="margin:0 0 14px;">分层参考国内《急诊预检分诊专家共识》四级分诊标准：<b>红区</b>（急危/急重，立即抢救、拨打 120）、<b>黄区</b>（急症，24 小时内门急诊）、<b>绿区</b>（亚急症，1-3 日内门诊随访）；信息不足时显示「待评估」，不会武断下结论。</p>
+
+      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">手机端 / 其他电脑使用</div>
       <p style="margin:0 0 6px;">为保证大模型 API 在任何设备上稳定可用，<b>推荐使用本地代理服务启动</b>：</p>
       <ol style="margin:0 0 14px;padding-left:20px;">
         <li>双击文件夹中的 <code style="background:#EEF7F5;padding:1px 6px;border-radius:4px;">启动智诊通.bat</code></li>
@@ -222,23 +344,23 @@
         <li>浏览器会自动打开页面，手机/其他电脑连接同一 WiFi 后，访问窗口中显示的局域网地址即可</li>
       </ol>
       <div class="hint" style="margin-bottom:14px;">
-        💡 代理模式下 API 密钥保存在服务端，前端不接触密钥，无 CORS 跨域问题，手机/电脑/平板都能稳定使用。开会前提前启动服务即可。
+        代理模式下 API 密钥保存在服务端，前端不接触密钥，无 CORS 跨域问题，手机/电脑/平板都能稳定使用。开会前提前启动服务即可。
       </div>
 
-      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">🌐 让任何人在任何地方使用（云端部署）</div>
+      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">让任何人在任何地方使用（云端部署）</div>
       <p style="margin:0 0 6px;">如果需要分享给客户/患者/同事在任何地方用手机打开，需要部署到云端：</p>
       <ol style="margin:0 0 14px;padding-left:20px;">
         <li>把所有文件上传到 GitHub 仓库</li>
-        <li>在 <a href="https://render.com" target="_blank" style="color:var(--secondary);">Render.com</a>（免费）用 GitHub 账号登录</li>
+        <li>在 <a href="https://render.com" target="_blank" style="color:var(--primary-deep);">Render.com</a>（免费）用 GitHub 账号登录</li>
         <li>New → Web Service → 选择你的仓库</li>
         <li>环境变量添加 <code style="background:#EEF7F5;padding:1px 6px;border-radius:4px;">LLM_API_KEY</code> = 你的 DeepSeek 密钥</li>
         <li>部署完成后得到一个 <code style="background:#EEF7F5;padding:1px 6px;border-radius:4px;">https://xxx.onrender.com</code> 网址，任何人手机打开即用</li>
       </ol>
       <div class="hint" style="margin-bottom:14px;">
-        📖 详细图文步骤见随附的 <b>部署指南.md</b> 文件。Render 免费版 15 分钟无访问会休眠，首次打开需等 10-30 秒。
+        详细图文步骤见随附的 <b>部署指南.md</b> 文件。Render 免费版 15 分钟无访问会休眠，首次打开需等 10-30 秒。
       </div>
 
-      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">⚙️ 大模型配置</div>
+      <div style="font-weight:600;color:var(--primary);margin-bottom:6px;">大模型配置</div>
       <p style="margin:0 0 6px;">支持所有 OpenAI 兼容接口，推荐：</p>
       <ul style="margin:0 0 14px;padding-left:20px;">
         <li><b>DeepSeek</b>：接口 <code style="background:#EEF7F5;padding:1px 6px;border-radius:4px;">https://api.deepseek.com/v1</code>，模型 <code style="background:#EEF7F5;padding:1px 6px;border-radius:4px;">deepseek-chat</code></li>
@@ -246,10 +368,11 @@
       </ul>
       <p style="margin:0 0 14px;">在设置中点对应预设按钮可一键填入，然后粘贴密钥、测试连接、保存即可。</p>
 
-      <div style="font-weight:600;color:var(--high);margin-bottom:6px;">⚠️ 重要提示</div>
+      <div style="font-weight:600;color:var(--high);margin-bottom:6px;">重要提示</div>
       <ul style="margin:0;padding-left:20px;">
         <li>本工具仅供健康咨询与导诊参考，<b>不构成诊断或处方</b></li>
         <li>急症（胸痛、呼吸困难、意识不清、大出血等）请立即拨打 120</li>
+        <li>若您或身边人有自伤、自杀念头，请立即拨打 120/110 或全国心理援助热线 <b>12356</b>，并请信任的人陪伴</li>
         <li>请勿在对话中输入姓名、身份证号、银行卡号等敏感个人信息</li>
       </ul>
     </div>
@@ -261,38 +384,55 @@
 <script>
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
-// 代理模式检测：通过 HTTP 访问时走本地代理（解决 CORS、支持手机端/多设备）
-const IS_PROXY = location.protocol === 'http:' || location.protocol === 'https:';
-let serverConfig = null; // 代理模式下从服务端获取的配置
+// 代理模式探测：仅当 /api/config 真的返回 JSON（本地代理服务在线）时才启用；普通静态托管不误判
+let proxyReady = false;
+let serverConfig = null;
+const isProxy = () => proxyReady;
 const SYNONYMS = [
-  [/胸口?疼/g,'胸痛'], [/心口疼/g,'胸痛'], [/心前区疼/g,'胸痛'], [/胸骨后疼/g,'胸骨后痛'],
-  [/喘不过?气(来)?/g,'喘不上气'], [/抽风/g,'抽搐'], [/晕倒/g,'晕厥'],
-  [/半身不遂/g,'偏瘫'], [/嘴歪/g,'口角歪斜'], [/吐字不清/g,'说话不清'],
-  [/吐血/g,'呕血'], [/柏油样便/g,'黑便'], [/喘气困难/g,'呼吸困难']
+  [/胸口?疼/g,'胸痛'], [/胸口痛/g,'胸痛'], [/心口疼/g,'胸痛'], [/心口痛/g,'胸痛'], [/胸疼/g,'胸痛'],
+  [/喘不过?气(来)?/g,'喘不上气'], [/喘不过气/g,'喘不上气'], [/喘气困难/g,'呼吸困难'],
+  [/抽风/g,'抽搐'], [/晕倒/g,'晕厥'],
+  [/半身不遂/g,'偏瘫'], [/嘴歪/g,'口角歪斜'], [/嘴歪眼斜/g,'口角歪斜'], [/吐字不清/g,'说话不清'],
+  [/口齿不清/g,'说话不清'], [/大舌头/g,'说话不清'], [/流口水/g,'口角流涎'],
+  [/看东西重影/g,'复视'], [/视物成双/g,'复视'],
+  [/吐血/g,'呕血'], [/柏油样便/g,'黑便'], [/拉血/g,'便血'], [/拉肚子/g,'腹泻'],
+  [/煤气中毒/g,'一氧化碳中毒']
 ];
+// 红旗急症规则：确定性本地安全层，优先级高于任何大模型回复
+// 依据：急诊预检分诊专家共识、国家卫健委中风120/BE FAST、心梗预警征象等公开权威科普
 const RED_FLAGS = [
   { id:'RF-CP-01', cat:'急性胸痛/心血管急症', any:['胸痛','压榨感','压榨样','绞榨','濒死感','心梗','心肌梗死','心绞痛','胸骨后痛'] },
   { id:'RF-CP-02', cat:'急性胸痛/心血管急症', all:[['胸闷','胸部发闷','胸口发闷','胸痛'],['大汗','大汗淋漓','冷汗','出汗不止','浑身湿冷']] },
-  { id:'RF-DY-01', cat:'呼吸困难/缺氧', any:['喘不上气','喘憋','窒息','吸不上气','呼吸困难','口唇发紫','嘴唇发紫','口唇青紫','嘴唇青紫','憋气'] },
+  { id:'RF-CP-03', cat:'急性胸痛/心血管急症', all:[['胸痛','胸闷','胸口痛','心口痛','胸部发闷'],['放射','串到','牵涉','肩膀','左肩','后背','背部','下颌','下巴','脖子疼','手臂','左臂','左胳膊']] },
+  { id:'RF-DY-01', cat:'呼吸困难/缺氧', any:['喘不上气','喘憋','窒息','吸不上气','呼吸困难','口唇发紫','嘴唇发紫','口唇青紫','嘴唇青紫','憋气','说不出整句话','不能平卧','躺不平','端坐呼吸','喘鸣'] },
   { id:'RF-CO-01', cat:'意识障碍/抽搐', any:['昏迷','意识不清','叫不醒','呼之不应','人事不省','晕厥','抽搐','惊厥','口吐白沫','全身抽动'] },
-  { id:'RF-ST-01', cat:'脑卒中信号', any:['偏瘫','半身不遂','一侧手脚无力','单侧肢体无力','一侧肢体无力','口角歪斜','说话不清','言语不清','一侧麻木','半边麻木','脑梗','脑出血','中风'] },
-  { id:'RF-HA-01', cat:'突发剧烈头痛', any:['炸裂样头痛','炸裂样头疼','最剧烈头痛','雷击样头痛','爆炸样头痛','头痛欲裂'] },
-  { id:'RF-BL-01', cat:'大出血/呕血黑便', any:['呕血','咯血','咳血','黑便','柏油样便','大出血','大量出血','便血不止','阴道大量出血','血崩','出血不止'] },
-  { id:'RF-AL-01', cat:'严重过敏反应', any:['喉头紧','喉咙发紧','喉头发紧','面唇肿胀','舌头肿','过敏性休克','全身风团伴喘'] },
+  { id:'RF-ST-01', cat:'脑卒中信号', any:['偏瘫','半身不遂','一侧手脚无力','单侧肢体无力','一侧肢体无力','口角歪斜','说话不清','言语不清','一侧麻木','半边麻木','脑梗','脑出血','中风','口角流涎','复视','走路不稳','平衡障碍','双眼发黑','突然看不见','抬不起胳膊','双臂不对称'] },
+  { id:'RF-ST-02', cat:'突发剧烈头痛', any:['炸裂样头痛','炸裂样头疼','最剧烈头痛','雷击样头痛','爆炸样头痛','头痛欲裂'] },
+  { id:'RF-ST-03', cat:'突发剧烈头痛', all:[['头痛','头疼'],['炸裂','剧烈','从来没有','最厉害','受不了','无法忍受','前所未有的','这辈子最']] },
+  { id:'RF-BL-01', cat:'大出血/呕血黑便', any:['呕血','咯血','咳血','黑便','柏油样便','大出血','大量出血','便血不止','大量便血','阴道大量出血','血崩','出血不止'] },
+  { id:'RF-AL-01', cat:'严重过敏反应', any:['喉头紧','喉咙发紧','喉头发紧','喉头水肿','面唇肿胀','舌头肿','嘴唇肿眼皮肿','过敏性休克','全身风团伴喘'] },
   { id:'RF-AL-02', cat:'严重过敏反应', all:[['风团','荨麻疹','皮疹'],['喘','呼吸困难','憋气','胸闷']] },
   { id:'RF-AB-01', cat:'急腹症/休克', any:['腹部僵硬','板状腹','持续剧烈腹痛','剧烈腹痛','休克','四肢湿冷'] },
-  { id:'RF-AB-02', cat:'急腹症/休克', all:[['腹痛','肚子痛','腹部疼痛'],['面色苍白','出冷汗','四肢湿冷','冷汗','血压低']] }
+  { id:'RF-AB-02', cat:'急腹症/休克', all:[['腹痛','肚子痛','腹部疼痛'],['面色苍白','出冷汗','四肢湿冷','冷汗','血压低']] },
+  { id:'RF-TO-01', cat:'中毒/误服', any:['误服','误食','服毒','农药','百草枯','安眠药过量','药物过量','吃药自杀','一氧化碳中毒','煤气中毒','喝了消毒液','化学品灼伤'] },
+  { id:'RF-PG-01', cat:'孕产急症', any:['阴道大量出血','血崩','胎动消失','破水了','羊水破了','见红大出血'] },
+  { id:'RF-PG-02', cat:'孕产急症', all:[['怀孕','孕妇','孕期','有身孕','怀着孕'],['出血','腹痛','肚子痛','破水','胎动异常','见红']] },
+  { id:'RF-IF-01', cat:'婴幼儿急症', all:[['婴儿','宝宝','婴幼儿','新生儿','月子里','几个月大'],['叫不醒','抽搐','反复呕吐','口吐白沫','嘴唇发紫','喘憋','喂养困难','精神萎靡','软绵绵','前囟隆起']] },
+  { id:'RF-TR-01', cat:'严重创伤/烧伤', any:['断肢','穿透伤','刺穿身体','严重烧伤','大面积烫伤','严重车祸','高处坠落','头部外伤后昏迷'] },
+  { id:'RF-PS-01', cat:'心理危机/自伤风险', any:['不想活','活不下去','想死','自杀','跳楼','跳桥','割腕','轻生','自我了断','了结自己','伤害自己','同归于尽'] }
 ];
 const NEG_WORDS = ['没有','没','无','不','未','否认','从未','不曾','非'];
 const TURN_RE = /^.*(?:但是|但|可是|不过|然而|却|然后|接着)/;
+const STAGE_ORDER = ['chief','duration','severity','associated','trigger','history','age'];
+const STAGE_LABELS = { chief:'主诉', duration:'时长', severity:'程度', associated:'伴随', trigger:'诱因', history:'病史', age:'年龄' };
 const STAGE_SCRIPTS = {
-  chief:      { q:'请问您现在最不舒服的地方是哪里呢？慢慢说，不用着急。', opts:['胸痛/胸闷','头痛/头晕','腹痛/腹泻','咳嗽/发热','其他不适'] },
-  duration:   { q:'这种情况大概持续多久了？',     opts:['几分钟内','几小时','1-3天','1周以上'] },
-  severity:   { q:'如果用 0-10 分来形容，现在的难受程度大概几分呢？（0分完全没事，10分无法忍受）', opts:['轻微(1-3)','中等(4-6)','严重(7-8)','无法忍受(9-10)'] },
-  associated: { q:'除了主要的不舒服，还有没有其他伴随的情况呢？', opts:['发热','恶心呕吐','呼吸困难','出汗','麻木无力','都没有'] },
-  trigger:    { q:'有没有发现什么情况下会加重或缓解呢？比如活动后、休息后、吃饭前后。', opts:['活动后加重','休息后缓解','与进食相关','无明显诱因'] },
-  history:    { q:'您之前有没有确诊过什么慢性病，或者长期在吃什么药呢？', opts:['高血压','糖尿病','心脏病','哮喘','无'] },
-  age:        { q:'方便告诉我您的年龄段吗？这有助于我更准确地评估。', opts:['儿童(<14)','青年(14-39)','中年(40-64)','老年(≥65)'] }
+  chief:      { q:'您哪里不舒服？', opts:['胸痛/胸闷','头痛/头晕','腹痛/腹泻','咳嗽/发热','其他不适'] },
+  duration:   { q:'持续多久了？',     opts:['几分钟内','几小时','1-3天','1周以上'] },
+  severity:   { q:'难受程度大概几分？（0-10分）', opts:['轻微(1-3)','中等(4-6)','严重(7-8)','无法忍受(9-10)'] },
+  associated: { q:'还有其他伴随症状吗？', opts:['发热','恶心呕吐','呼吸困难','出汗','麻木无力','都没有'] },
+  trigger:    { q:'什么情况下会加重或缓解？', opts:['活动后加重','休息后缓解','与进食相关','无明显诱因'] },
+  history:    { q:'有什么慢性病或长期用药吗？', opts:['高血压','糖尿病','心脏病','哮喘','无'] },
+  age:        { q:'您的年龄段？', opts:['儿童(<14)','青年(14-39)','中年(40-64)','老年(≥65)'] }
 };
 const DEPT_RULES = [
   [/胸痛|胸闷|心慌|心悸|血压/, '心血管内科'],
@@ -301,65 +441,210 @@ const DEPT_RULES = [
   [/腹痛|肚子痛|恶心|呕吐|腹泻|黑便/, '消化内科'],
   [/尿|腰|水肿|肾/, '肾内科 · 泌尿外科'],
   [/皮疹|风团|瘙痒|过敏/, '皮肤科 · 变态反应科'],
+  [/咽痛|嗓子|鼻塞|流涕/, '耳鼻喉科'],
+  [/牙/, '口腔科'],
+  [/眼/, '眼科'],
+  [/情绪低落|焦虑|抑郁|失眠|不想活/, '精神心理科'],
   [/发热|乏力|全身/, '全科医学科 · 发热门诊'],
   [/儿童|婴儿|宝宝|孩子/, '儿科'],
-  [/孕|月经|阴道/, '妇科 · 产科'],
+  [/孕|月经|阴道|见红/, '妇科 · 产科'],
   [/骨|关节|颈|腰腿/, '骨科']
 ];
+// 可能原因推断：基于主诉与伴随症状给出常见方向（仅供参考，不构成诊断）
+const POSSIBLE_CAUSES = [
+  { match:['头痛','头疼','头晕'], causes:['紧张性头痛 / 偏头痛','睡眠不足、压力大、疲劳','血压异常','感冒或鼻窦炎','颈椎问题'] },
+  { match:['发热','发烧'], causes:['感冒 / 上呼吸道感染','流感','身体某处炎症（如咽喉、尿路、肺部）','疫苗反应或药物反应'] },
+  { match:['咳嗽','咳痰'], causes:['感冒 / 上呼吸道感染','支气管炎','过敏性咳嗽 / 咽炎','肺炎（伴发热、咳痰需警惕）'] },
+  { match:['咽痛','嗓子疼','喉咙痛'], causes:['咽炎 / 扁桃体炎','感冒','用嗓过度或空气干燥'] },
+  { match:['腹痛','肚子痛','腹泻','拉肚子'], causes:['急性胃肠炎 / 饮食不当','消化不良、胃肠痉挛','胃炎 / 胃溃疡','阑尾炎（右下腹痛需警惕）'] },
+  { match:['恶心','呕吐'], causes:['胃肠炎 / 饮食不当','晕车、晕船','胃炎或消化不良','妊娠反应（育龄女性需考虑）'] },
+  { match:['胸闷','心慌','心悸'], causes:['焦虑、紧张、过度换气','心律失常','胃食管反流','贫血或疲劳'] },
+  { match:['皮疹','瘙痒','风团','过敏'], causes:['荨麻疹 / 过敏性皮炎','湿疹','接触性皮炎（化妆品、衣物、金属）','食物或药物过敏'] },
+  { match:['鼻塞','流涕','打喷嚏'], causes:['普通感冒','过敏性鼻炎','鼻窦炎','空气干燥或刺激'] },
+  { match:['牙痛','牙疼'], causes:['龋齿 / 牙髓炎','牙龈炎 / 牙周炎','智齿问题','冷热刺激敏感'] },
+  { match:['眼痛','眼睛红','视物模糊'], causes:['结膜炎 / 干眼症','用眼过度、视疲劳','麦粒肿','角膜炎或青光眼（需警惕）'] },
+  { match:['腰痛','腰酸'], causes:['腰肌劳损 / 久坐','腰椎间盘问题','肾结石（伴血尿需警惕）','肌肉拉伤'] },
+  { match:['关节痛','腿疼','颈肩痛'], causes:['肌肉劳损 / 久坐姿势不良','关节炎','运动拉伤','颈椎病 / 腰椎病'] },
+  { match:['乏力','疲劳','没力气'], causes:['睡眠不足、过度劳累','感冒或身体炎症','贫血','压力大、情绪低落'] },
+  { match:['失眠','睡不着'], causes:['压力大、焦虑','作息不规律','咖啡因或电子产品影响','环境因素（噪音、光线）'] }
+];
+function inferCauses(){
+  const text = [state.chief, state.associated.join(' '), state.trigger].join(' ');
+  const out = [];
+  for (const r of POSSIBLE_CAUSES){
+    if (r.match.some(w => text.includes(w))){
+      for (const c of r.causes) if (!out.includes(c)) out.push(c);
+    }
+  }
+  return out.slice(0, 4);
+}
 const WARN_SYMPTOMS = ['发热','呕吐','腹泻','头晕','心慌','心悸','胸闷','气短','出汗','麻木','无力','视物模糊','体重下降','夜间加重'];
-const TIMING = {
-  '低危': '建议 1-3 日内预约门诊；症状加重或出现新症状时随时就诊。',
-  '中危': '建议 24 小时内前往门急诊评估，避免剧烈活动与长途出行。',
-  '高危': '立即前往急诊或拨打 120，不要自行驾车、不要在家服药观察。'
+const NONE_MARKER = { associated:'无明显伴随症状', history:'无特殊既往史', trigger:'无明显诱因' };
+const UNKNOWN_RE = /不清楚|不知道|说不清|不好说|没法说|不确定|不太清楚|说不准|忘了|记不清|没什么概念/;
+const ZONE = {
+  '高危':  { cls:'red',    tag:'红区 · 立即抢救', desc:'对应急诊 Ⅰ-Ⅱ 级：立即拨打 120 或急诊抢救' },
+  '中危':  { cls:'yellow', tag:'黄区 · 优先就诊', desc:'对应急诊 Ⅲ 级：24 小时内门急诊评估' },
+  '低危':  { cls:'green',  tag:'绿区 · 门诊随访', desc:'对应急诊 Ⅳ 级：1-3 日内门诊，加重随时就诊' },
+  '待评估':{ cls:'gray',   tag:'信息不足', desc:'请继续补充问诊信息，期间加重请直接就诊' }
 };
-const SYSTEM_PROMPT = `你是"智诊通"健康问诊助手，风格参考小荷医生：温暖、耐心、专业、易懂。你的职责是健康咨询、预问诊信息采集和导诊建议。你不是医生，不能做诊断。
+const TIMING = {
+  '待评估': '信息不足，继续补充；加重随时就诊。',
+  '低危': '1-3 日内门诊，加重随时就诊。',
+  '中危': '24 小时内门急诊评估。',
+  '高危': '立即急诊或拨打 120。'
+};
+const SYSTEM_PROMPT = `你是"智诊通"在线问诊系统里的一位接诊医生。人设：在二甲医院干了10年的全科医生，今天在线上接诊。性格干脆、带点冷幽默，口头禅"先别自己吓自己""这个不能拖""我跟你讲清楚"。你要像真人医生一样说话，不要像AI助手。
 
-【沟通风格】
-- 语气温暖有同理心，像一位耐心的全科医生在和患者面对面交流
-- 用通俗的语言解释，避免专业术语堆砌；必须用术语时简单解释
-- 先共情再提问，例如"理解您的不适，想再了解一下…"
-- 一次最多追问1-2个最关键的问题，不要像填表一样连续追问
-- 根据用户回答灵活调整问题顺序，不要机械地按固定列表走
-- 对用户的焦虑给予适当安抚，但不淡化可能的风险
+【问诊节奏】
+1. 先问诊，后判断。信息不够就追问，一次只问2-4个关键问题，绝不一口气列十几条。
+2. 用短句、口语，像面对面说话。每轮回复不超过3句话，能一句话说清就别两句。可以用"嗯""我看看""先别急"。专业词后面马上用大白话解释。
+3. 可以犹豫、改口、停顿，不要像背标准答案。不必每轮都完整回答，有时只问问题。
 
-【绝对禁止】
-1. 禁止给出确定诊断（禁止"你患的是XX病""确诊为"）。
-2. 禁止输出任何具体药名、剂量、用法、疗程。
-3. 禁止承诺疗效，禁止建议"在家服药观察""先忍一忍""不用去医院"。
-4. 禁止编造用户未提供的信息，未提供的字段必须留空，不得猜测。
-5. 疑似急症时必须明确要求"立即拨打120或前往最近医院急诊科"。
-6. 禁止输出 markdown 代码块、思考过程、解释性文字、前后缀说明。
+【禁止AI腔】
+- 禁止"作为AI/语言模型""首先其次最后""综上所述""总之""希望以上对您有帮助""如有任何问题随时咨询"。
+- 不要客服腔，不要"亲爱的患者"。
+- 不要机械分点、小标题、表格、长列表。除非确实需要，最多3条，像随手写的。
+- 默认不用列表、不用emoji、不加粗、不写标题，像微信语音转文字那样自然。
+
+【判断与建议】
+- 给判断要有不确定性："更像""倾向于""不太像""不能排除""得查一下才能定"。不装全知。
+- 给建议分三层：现在能做什么；什么情况尽快线下；什么情况直接急诊。
+- 默认每轮只说 2-3 句话，约 60-100 字；除非用户明确要求详细，否则不要展开解释。
+- 第一口先说最关键的一句，再补 1-2 个必要问题或下一步。能一句讲清就不要写第二句。
+- 不要每轮结尾都问"还有什么可以帮您"。不要反复免责声明。不要每段都总结。
+
+【安全边界】
+- 不伪造检查、诊断、处方和执业身份。线上只给方向，不替代面诊。紧急红旗症状（胸痛、呼吸困难、意识不清、大出血等）直接让去急诊。
+- 不开具体处方剂量。禁止承诺疗效，禁止建议"在家服药观察""先忍一忍""不用去医院"。
+- 用户表达自杀、自伤或伤害他人念头时，emergency 必须设为 true，reply 先表达在意和陪伴，明确建议立即拨打 120/110 或全国心理援助热线 12356，并让身边信任的人陪伴、远离危险物品，不要讲大道理。
+- 如果用户问你是不是AI，不要坚称自己是真人；可以说"我按医生问诊的方式帮你梳理，不能替代面诊"。
+- 不编造用户未提供的信息，extract 中未提及的字段必须留空。
 
 【输出格式】只输出一个 JSON 对象，不得包含任何其他字符：
-{"extract":{"chief":"","duration":"","severity":"","associated":[],"trigger":"","history":[],"age":""},"reply":"1-3句自然语言回复，包含共情和最多1-2个追问","emergency":false}
+{"extract":{"chief":"","duration":"","severity":"","associated":[],"trigger":"","history":[],"age":""},"reply":"60-100字、2-3句话的真人医生式回复；先说最关键的判断，再追问必要信息或给下一步建议","emergency":false}
 
 【字段规则】
 - extract 只填用户明确说过的信息；未提及的一律留空字符串或空数组。
+- severity 只能填"轻微""中等""严重""无法忍受"四档之一，或"N分"（N为0-10的数字）。
 - associated / history 为字符串数组。
-- reply 要自然温暖，先回应用户感受，再追问当前最缺的信息；不要罗列问题。
-- emergency 仅在出现危及生命的征象时为 true；你无权判断风险等级。`;
-const state = {
-  stage: 'chief',
-  asked: new Set(),
-  got: { chief:false, duration:false, severity:false, associated:false, trigger:false, history:false, age:false },
-  chief:'', duration:'', severity:'', associated:[], trigger:'', history:[], age:'',
-  redFlags: [], riskLevel:'', score:0, scoreBreakdown:{},
-  locked:false, done:false, busy:false,
-  messages: [], engineLog: []
-};
+- reply 按上面的人设和风格写，像微信语音转文字，自然口语，可以带犹豫和停顿。
+- emergency 仅在出现危及生命的征象或自伤伤人风险时为 true；你无权判断风险等级，但红旗症状必须让去急诊。`;
+
+function freshState(){
+  return {
+    stage: 'chief',
+    askCounts: {},
+    got: { chief:false, duration:false, severity:false, associated:false, trigger:false, history:false, age:false },
+    chief:'', duration:'', severity:'', associated:[], trigger:'', history:[], age:'',
+    redFlags: [], riskLevel:'', score:0, scoreBreakdown:{},
+    locked:false, done:false, busy:false, cardShown:false, crisis:false,
+    messages: [], engineLog: []
+  };
+}
+let state = freshState();
 const CFG_KEY = 'zzt.config.v1';
+const SOUND_KEY = 'zzt.sound.v1';
 const DEFAULT_CFG = { baseUrl:'https://api.openai.com/v1', apiKey:'', model:'gpt-4o-mini',
-                      mode:'local', timeoutMs:30000, testTimeoutMs:12000 };
+                      mode:'llm-first', timeoutMs:20000, testTimeoutMs:10000 };
+let soundEnabled = true;
+let audioCtx = null;
+
+function loadSoundPreference(){
+  try {
+    const raw = localStorage.getItem(SOUND_KEY);
+    if (raw === 'off') soundEnabled = false;
+    else if (raw === 'on') soundEnabled = true;
+  } catch (_) {}
+}
+function saveSoundPreference(){
+  try { localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off'); } catch (_) {}
+}
+function ensureAudio(){
+  if (!soundEnabled) return null;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try {
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended') {
+      const p = audioCtx.resume();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    }
+    return audioCtx;
+  } catch (_) { return null; }
+}
+function primeAudio(){
+  // 浏览器通常只允许在用户手势期间唤醒 AudioContext，提前激活可保证异步 AI 回复也能出声。
+  const ctx = ensureAudio();
+  if (!ctx || ctx.state !== 'running') return;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0.00001;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.006);
+  } catch (_) {}
+}
+function playTone(ctx, from, to, durationMs, type, gainValue, delayMs = 0){
+  if (!ctx || ctx.state !== 'running') return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const t = ctx.currentTime + delayMs / 1000;
+  const d = durationMs / 1000;
+  osc.type = type;
+  osc.frequency.setValueAtTime(from, t);
+  if (to && to !== from) osc.frequency.exponentialRampToValueAtTime(to, t + d);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.00035, gainValue), t + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + d + 0.015);
+}
+function playUISound(kind = 'tap'){
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  if (ctx.state === 'suspended'){
+    ctx.resume().then(() => { if (soundEnabled) playUISound(kind); }).catch(() => {});
+    return;
+  }
+  if (ctx.state !== 'running') return;
+  if (kind === 'send'){
+    playTone(ctx, 650, 880, 48, 'triangle', 0.032);
+  } else if (kind === 'receive'){
+    playTone(ctx, 760, 620, 62, 'sine', 0.026);
+  } else if (kind === 'confirm'){
+    playTone(ctx, 600, 790, 42, 'triangle', 0.028);
+    playTone(ctx, 790, 980, 46, 'triangle', 0.020, 44);
+  } else if (kind === 'alert'){
+    playTone(ctx, 520, 430, 92, 'square', 0.036);
+    playTone(ctx, 430, 360, 100, 'square', 0.024, 96);
+  } else {
+    playTone(ctx, 680, 680, 34, 'sine', 0.018);
+  }
+}
+function renderSoundButton(){
+  const btn = $('#btnSound');
+  if (!btn) return;
+  const on = soundEnabled;
+  btn.classList.toggle('sound-off', !on);
+  btn.title = on ? '界面音效：开启' : '界面音效：关闭';
+  btn.setAttribute('aria-label', on ? '界面音效：开启' : '界面音效：关闭');
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  const onIcon = btn.querySelector('.sound-on');
+  const offIcon = btn.querySelector('.sound-off');
+  if (onIcon) onIcon.style.display = on ? '' : 'none';
+  if (offIcon) offIcon.style.display = on ? 'none' : '';
+}
 const PRESETS = {
   deepseek: { baseUrl:'https://api.deepseek.com/v1', model:'deepseek-chat', hint:'密钥在 platform.deepseek.com 申请' },
   openai:   { baseUrl:'https://api.openai.com/v1', model:'gpt-4o-mini', hint:'密钥在 platform.openai.com 申请' },
   custom:   { baseUrl:'', model:'', hint:'请手动填写接口地址和模型名称' }
 };
 function getConfig(){
-  // 代理模式：优先使用服务端配置
-  if (IS_PROXY && serverConfig) {
-    return { ...DEFAULT_CFG, ...serverConfig };
-  }
+  if (isProxy() && serverConfig) return { ...DEFAULT_CFG, ...serverConfig };
   try {
     const raw = localStorage.getItem(CFG_KEY);
     if (!raw) return { ...DEFAULT_CFG };
@@ -368,24 +653,24 @@ function getConfig(){
   } catch { return { ...DEFAULT_CFG }; }
 }
 function saveConfig(cfg){
-  if (IS_PROXY) {
-    // 代理模式：POST 到服务端保存
+  if (isProxy()) {
     serverConfig = { ...(serverConfig || {}), ...cfg };
     fetch('/api/config', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify(cfg)
+      method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(cfg)
     }).catch(() => {});
     return;
   }
   try { localStorage.setItem(CFG_KEY, JSON.stringify({ ...DEFAULT_CFG, ...cfg })); } catch {}
 }
 async function loadServerConfig(){
-  if (!IS_PROXY) return;
+  if (location.protocol === 'file:') return;
   try {
     const res = await fetch('/api/config');
-    if (res.ok) serverConfig = await res.json();
-  } catch (_) {}
+    if (res.ok){
+      const data = await res.json();
+      if (data && typeof data === 'object'){ serverConfig = data; proxyReady = true; }
+    }
+  } catch (_) { /* 普通静态托管：保持本地模式 */ }
 }
 function normalize(raw){
   let s = String(raw || '').trim();
@@ -399,20 +684,32 @@ function preSeg(text, hitIdx){
   let seg = pre.split(/[，,。；;、！!？?\s\r\n]+/).pop() || '';
   return seg.replace(TURN_RE, '');
 }
-function isNegated(text, hitIdx){
+function isNegated(text, hitIdx, word){
   const seg = preSeg(text, hitIdx);
-  if (!seg) return false;
-  return NEG_WORDS.some(w => seg.includes(w));
+  if (seg && NEG_WORDS.some(w => seg.includes(w))) return true;
+  // 后向否定：仅承认"倒是没有/是没有的"这类明确倒装，避免"胸痛没有缓解"被误否定
+  const after = text.slice(hitIdx + word.length, hitIdx + word.length + 8);
+  if (/^\s*倒是?没?有|^\s*是没有的|^\s*倒是?未/.test(after)) return true;
+  return false;
 }
 function hitAny(text, words){
   for (const w of words){
     let from = 0, idx;
     while ((idx = text.indexOf(w, from)) !== -1){
-      if (!isNegated(text, idx)) return { word:w, idx };
+      if (!isNegated(text, idx, w)) return { word:w, idx };
       from = idx + w.length;
     }
   }
   return null;
+}
+function positiveWords(text, words){
+  // 与 hitAny 同理，但批量返回未被否定的命中词（去重）
+  const out = [];
+  for (const w of words){
+    const h = hitAny(text, [w]);
+    if (h && !out.includes(w)) out.push(w);
+  }
+  return out;
 }
 function redFlag(rawText){
   const t = normalize(rawText);
@@ -429,93 +726,194 @@ function redFlag(rawText){
   }
   return { hit: hits.length > 0, hits };
 }
+// 敏感个人信息检测：手机号 / 身份证号，命中即拦截，不发送
+function findSensitive(raw){
+  const t = String(raw || '');
+  const phone = t.match(/(?<!\d)1[3-9]\d{9}(?!\d)/);
+  const idcard = t.match(/(?<!\d)\d{17}[\dXx](?!\d)/);
+  if (idcard) return '身份证号';
+  if (phone) return '手机号';
+  return '';
+}
+// 疼痛评分解析：只接受明确评分/疼痛语境，杜绝把"3天""8岁""无明显诱因"误判成评分
+function parseSeverity(t, stage){
+  let m = t.match(/(\d{1,2})\s*分(?!钟)/) || t.match(/(\d{1,2})\s*[/／]\s*10/);
+  if (!m && stage === 'severity' && !/(岁|个月|分钟|小时|天|周|月|年)/.test(t)) m = t.match(/(\d{1,2})/);
+  if (m){
+    const n = Math.min(10, Math.max(0, parseInt(m[1], 10)));
+    if (n >= 8) return '无法忍受';
+    if (n >= 7) return '严重';
+    if (n >= 4) return '中等';
+    return '轻微';
+  }
+  // 文字档只在程度问诊阶段、或文本本身带疼痛/程度语境时才识别
+  const painCtx = stage === 'severity' || /程度|难受|疼|痛|严重|评分|忍不了/.test(t);
+  if (!painCtx) return '';
+  if (/无法忍受|受不了|顶不住|剧烈/.test(t)) return '无法忍受';
+  if (/严重|很重|非常难受|挺厉害|很厉害/.test(t)) return '严重';
+  if (/中等|一般|还可以|比较疼|较严重/.test(t)) return '中等';
+  if (/轻微|轻度|还好|不严重|能忍|有点疼|一点点/.test(t)) return '轻微';
+  return '';
+}
 function extractLocal(text, stage){
   const t = normalize(text);
   const out = {};
-  if (/^(没有|没|无|不|否|都没|全都没有|未|否认|none)/.test(t)){
-    if (stage === 'associated') out.associated = ['无明显伴随症状'];
-    if (stage === 'history')    out.history = ['无特殊既往史'];
-    if (stage === 'trigger')    out.trigger = '无明显诱因';
-    return out;
-  }
+  const negStart = /^(没有|没|无|否|不是|并未|未曾|都没|全都没有|未|否认|none|no)/i.test(t);
+  const unknown = UNKNOWN_RE.test(t);
+
   if (stage === 'chief' || !state.got.chief){
-    const m = t.match(/([\u4e00-\u9fa5]{2,12}(?:痛|疼|不舒服|不适|难受|晕|发热|发烧|咳嗽|胸闷|麻木))/);
-    if (m) out.chief = m[1];
-    else if (t.length <= 20 && !state.got.chief) out.chief = t;
+    const isGreeting = /^(你好|您好|hi|hello|嗨|在吗|在么|医生(好|在吗)?)/i.test(t) && t.length <= 10;
+    const cm = t.match(/[一-龥]{2,14}(?:痛|疼|不舒服|不适|难受|头晕|头痛|发热|发烧|咳嗽|胸闷|喘憋|呼吸困难|麻木|无力|乏力|腹泻|呕吐|出血|水肿)/);
+    if (cm) out.chief = cm[0].replace(/^(我|就是|有点|有些|一直|最近|这两天|今天|昨天|前天|开始|出现|感觉|觉得)+/, '');
+    else if (t.length <= 20 && !/[?？]/.test(t) && !isGreeting) out.chief = t.replace(/^(就是|有点|有些)/, '');
   }
-  const dm = t.match(/(\d+\s*(?:分钟|小时|天|周|个?月|年)|半天|一夜|刚刚|突然|突发|几分钟|几小时|好几天)/);
-  if (dm) out.duration = dm[1];
-  const sm = t.match(/(\d{1,2})\s*(?:分|\/10)?/);
-  if (sm && +sm[1] <= 10) out.severity = sm[1] + '分';
-  else if (/(无法忍受|受不了|非常严重|极重|剧烈)/.test(t)) out.severity = '严重';
-  else if (/(中等|明显|较严重|挺严重)/.test(t)) out.severity = '中等';
-  else if (/(轻微|轻度|还好|不严重|能忍)/.test(t)) out.severity = '轻微';
-  const hit = WARN_SYMPTOMS.filter(w => t.includes(w));
-  if (hit.length) out.associated = hit;
-  if (/(活动|运动|走路|上楼).{0,4}(加重|就疼)/.test(t)) out.trigger = '活动后加重';
-  else if (/(休息|坐下|躺下).{0,4}(缓解|好转|减轻)/.test(t)) out.trigger = '休息后缓解';
-  else if (/(吃饭|进食|空腹)/.test(t)) out.trigger = '与进食相关';
-  const HIS = ['高血压','糖尿病','冠心病','心脏病','心梗','脑梗','中风','哮喘','慢阻肺','肿瘤','癌症','肝病','肾病','甲状腺','贫血','过敏'];
-  const h = HIS.filter(w => t.includes(w));
-  if (h.length) out.history = h;
-  if (/(\d{1,3})\s*岁/.test(t)) out.age = t.match(/(\d{1,3})\s*岁/)[1] + '岁';
-  else if (/(儿童|小孩|宝宝|婴儿)/.test(t)) out.age = '儿童(<14)';
-  else if (/(老年|退休|七十|八十)/.test(t)) out.age = '老年(≥65)';
+
+  // 持续时间
+  const dm = t.match(/(刚刚|刚才|突然|突发|一下子|几分钟|几小时|半天|一夜|好几天|昨天|前天|\d+\s*(?:分钟|小时|天|周|个?月|年))(?:多|左右|上下)?/);
+  if (dm) out.duration = dm[0];
+  else if (stage === 'duration' && unknown) out.duration = '未说明';
+
+  // 严重程度（修复数字误匹配）
+  const sev = parseSeverity(t, stage);
+  if (sev) out.severity = sev;
+  else if (stage === 'severity' && unknown) out.severity = '未说明';
+
+  // 伴随症状（否定感知）
+  if (stage === 'associated' && (negStart || /都没有|没有其他|没别的/.test(t))) out.associated = [NONE_MARKER.associated];
+  else {
+    const hit = positiveWords(t, WARN_SYMPTOMS);
+    if (hit.length) out.associated = hit;
+    else if (stage === 'associated' && unknown) out.associated = [NONE_MARKER.associated];
+  }
+
+  // 诱因与缓解
+  if (/(活动|运动|走路|上楼|爬楼).{0,4}(加重|就疼|更疼|难受)/.test(t)) out.trigger = '活动后加重';
+  else if (/(休息|坐下|躺下|停下来).{0,4}(缓解|好转|减轻|好点)/.test(t)) out.trigger = '休息后缓解';
+  else if (/(吃饭|进食|空腹|饭后|饭前)/.test(t)) out.trigger = '与进食相关';
+  else if (stage === 'trigger' && (negStart || /没有(明显)?诱因|说不清|不知道/.test(t))) out.trigger = NONE_MARKER.trigger;
+
+  // 既往史
+  const HIS = ['高血压','糖尿病','冠心病','心脏病','心梗','脑梗','中风','哮喘','慢阻肺','肿瘤','癌症','肝病','肾病','甲状腺','贫血','过敏','抑郁症'];
+  if (stage === 'history' && (negStart || /没有(什么)?病|没病|身体挺好/.test(t))) out.history = [NONE_MARKER.history];
+  else {
+    const h = positiveWords(t, HIS);
+    if (h.length) out.history = h;
+    else if (stage === 'history' && unknown) out.history = [NONE_MARKER.history];
+  }
+
+  // 年龄
+  const monthM = t.match(/(\d+)\s*个?月/);
+  if (monthM && /孩子|宝宝|婴儿|新生|幼儿|月/.test(t)) out.age = '婴幼儿(<1岁)';
+  else if (/(\d{1,3})\s*岁/.test(t)){
+    const n = parseInt(t.match(/(\d{1,3})\s*岁/)[1], 10);
+    if (n < 1) out.age = '婴幼儿(<1岁)';
+    else if (n < 14) out.age = '儿童(<14)';
+    else if (n < 40) out.age = '青年(14-39)';
+    else if (n < 65) out.age = '中年(40-64)';
+    else out.age = '老年(≥65)';
+  }
+  else if (/(儿童|小孩|宝宝|婴儿|新生儿|幼儿)/.test(t)) out.age = '儿童(<14)';
+  else if (/(老年|退休|七十|八十|奶奶|爷爷)/.test(t)) out.age = '老年(≥65)';
   else if (/(中年)/.test(t)) out.age = '中年(40-64)';
   else if (/(青年|学生|二十|三十)/.test(t)) out.age = '青年(14-39)';
+  else if (stage === 'age' && unknown) out.age = '未说明';
+
+  // 婴幼儿月龄不应同时被记成持续时间
+  if (out.age === '婴幼儿(<1岁)' && out.duration && /个?月/.test(out.duration) && stage === 'age') delete out.duration;
+
   Object.keys(out).forEach(k => { if (!out[k] || (Array.isArray(out[k]) && !out[k].length)) delete out[k]; });
   return out;
 }
 function mergeFields(ex){
   if (!ex || typeof ex !== 'object') return;
-  const S = v => (typeof v === 'string' ? v.trim() : '');
-  const A = v => Array.isArray(v) ? v.map(S).filter(Boolean) : [];
-  const chief = S(ex.chief);       if (chief && !state.got.chief)          { state.chief = chief; state.got.chief = true; }
-  const duration = S(ex.duration); if (duration && !state.got.duration)    { state.duration = duration; state.got.duration = true; }
-  const severity = S(ex.severity); if (severity && !state.got.severity)    { state.severity = severity; state.got.severity = true; }
-  const trigger = S(ex.trigger);   if (trigger && !state.got.trigger)      { state.trigger = trigger; state.got.trigger = true; }
-  const age = S(ex.age);           if (age && !state.got.age)              { state.age = age; state.got.age = true; }
-  const associated = A(ex.associated);
-  if (associated.length && !state.got.associated){
-    state.associated = Array.from(new Set([...state.associated, ...associated]));
-    state.got.associated = true;
-  }
-  const history = A(ex.history);
-  if (history.length && !state.got.history){
-    state.history = Array.from(new Set([...state.history, ...history]));
-    state.got.history = true;
-  }
+  const S = v => (typeof v === 'string' ? v.trim().slice(0, 40) : '');
+  const A = v => Array.isArray(v) ? v.map(x => typeof x === 'string' ? x.trim().slice(0, 20) : '').filter(Boolean).slice(0, 10) : [];
+  // 标量字段：新信息可覆盖旧信息（允许用户纠正），但"未说明"不覆盖已有有效值
+  ['chief','duration','severity','trigger','age'].forEach(k => {
+    const v = S(ex[k]);
+    if (!v) return;
+    if (state.got[k] && v === '未说明') return;
+    state[k] = v; state.got[k] = true;
+  });
+  // 数组字段：持续并集去重（后续轮次新补充的症状/病史也要计入），出现真实项时移除"无"标记
+  ['associated','history'].forEach(k => {
+    const items = A(ex[k]);
+    if (!items.length) return;
+    const marker = k === 'associated' ? NONE_MARKER.associated : NONE_MARKER.history;
+    const isNone = items.length === 1 && items[0] === marker;
+    if (isNone){
+      if (!state.got[k]){ state[k] = [marker]; state.got[k] = true; }
+    } else {
+      let merged = [...state[k].filter(x => x !== marker), ...items];
+      state[k] = Array.from(new Set(merged));
+      state.got[k] = true;
+    }
+  });
 }
 function nextStage(){
-  const ORDER = ['chief','duration','severity','associated','trigger','history','age'];
-  for (const s of ORDER) if (!state.got[s]) return s;
+  for (const s of STAGE_ORDER) if (!state.got[s]) return s;
   return 'done';
 }
 function evaluate(){
   const b = { severity:0, onset:0, age:0, comorbid:0, warning:0 };
   const S = v => (Array.isArray(v) ? v.join(' ') : String(v || ''));
+  // 各维度计分：只在对应信息明确采集后才计入风险
   const sv = S(state.severity);
-  if (/无法忍受|10|9|8|极重|非常严重|受不了|剧烈/.test(sv)) b.severity = 3;
-  else if (/中等|7|6|5|明显|较严重|挺严重/.test(sv))        b.severity = 2;
-  else if (/轻微|4|3|2|1|还好|能忍/.test(sv))               b.severity = 1;
+  if (/无法忍受/.test(sv))      b.severity = 3;
+  else if (/严重/.test(sv))     b.severity = 2;
+  else if (/中等/.test(sv))     b.severity = 2;
+  else if (/轻微/.test(sv))     b.severity = 1;
   const du = S(state.duration);
-  if (/分钟|刚刚|突然|突发|骤/.test(du))  b.onset = 3;
-  else if (/小时|半天|一夜/.test(du))      b.onset = 2;
-  else if (/天|昨天|前天/.test(du))        b.onset = 1;
+  if (/分钟|刚刚|刚才|突然|突发|骤|一下子/.test(du)) b.onset = 3;
+  else if (/小时|半天|一夜/.test(du))                b.onset = 2;
+  else if (/天|昨天|前天|周|月|年/.test(du))         b.onset = 1;
   const ag = S(state.age);
-  if (/老年|65|7\d|8\d|9\d|婴幼儿|婴儿|新生儿|儿童|孕/.test(ag)) b.age = 2;
-  else if (/中年|4\d|5\d/.test(ag))                                b.age = 1;
+  if (/老年|≥65|6[5-9]|7\d|8\d|9\d|婴幼儿|婴儿|新生儿|儿童|孕/.test(ag)) b.age = 2;
+  else if (/中年|4\d|5\d/.test(ag))                                     b.age = 1;
   const hs = S(state.history);
   if (/高血压|糖尿病|冠心病|心梗|脑梗|中风|肿瘤|癌症|肾病|透析|免疫抑制|抗凝/.test(hs)) b.comorbid = 2;
-  else if (/哮喘|慢阻肺|肝病|甲状腺|贫血|过敏/.test(hs))                                 b.comorbid = 1;
-  const asText = S(state.associated) + ' ' + S(state.chief);
-  b.warning = Math.min(3, WARN_SYMPTOMS.filter(w => asText.includes(w)).length);
+  else if (/哮喘|慢阻肺|肝病|甲状腺|贫血|过敏/.test(hs))                                b.comorbid = 1;
+  // 预警症状：主诉与伴随症状中的预警词去重合并，且必须是非否定语境采集到的
+  const warningSet = new Set();
+  WARN_SYMPTOMS.forEach(w => {
+    if (state.associated.includes(w)) warningSet.add(w);
+    else if (S(state.chief).includes(w)) warningSet.add(w);
+  });
+  b.warning = Math.min(3, warningSet.size);
   const score = b.severity*2 + b.onset*2 + b.age*1 + b.comorbid*1 + b.warning*2;
-  let level = '低危';
-  if (b.warning >= 3 || score >= 15) level = '高危';
-  else if (score >= 7)               level = '中危';
+
+  // 信息完整度（trigger 为辅助字段，不计入必需项）
+  const KEY_FIELDS = [
+    ['duration','持续时间'], ['severity','严重程度'], ['associated','伴随症状'],
+    ['history','既往史'], ['age','年龄段']
+  ];
+  const missing = KEY_FIELDS.filter(([k]) => !state.got[k]).map(([, label]) => label);
+  const infoTotal = KEY_FIELDS.length;
+  const infoComplete = infoTotal - missing.length;
+
+  // 定级：红旗拦截在 submit 层先行；一旦锁定（躯体急症红旗命中），任何重算都不得降级
+  let level;
+  if (state.locked || state.redFlags.some(h => h.id !== 'RF-PS-01')){
+    level = '高危';
+    state.score = score; state.scoreBreakdown = b; state.riskLevel = level;
+    return { level, score, breakdown: b, infoComplete, infoTotal, missingFields: missing };
+  }
+  // 强信号（无法忍受的程度、或多预警症状叠加极端程度）才直接高危，
+  // 避免普通胃肠炎（发热+呕吐+腹泻、中等程度）被误报为急症
+  const strongSignal = score >= 15
+    || (b.warning >= 3 && b.severity >= 3)
+    || (b.severity >= 3 && b.onset >= 3);
+  if (strongSignal){
+    level = '高危';
+  } else if (missing.length >= 2){
+    level = '待评估';
+  } else if (b.warning >= 2 || score >= 7){
+    level = '中危';
+  } else {
+    level = '低危';
+  }
   state.score = score; state.scoreBreakdown = b; state.riskLevel = level;
-  return { level, score, breakdown: b };
+  return { level, score, breakdown: b, infoComplete, infoTotal, missingFields: missing };
 }
 function mapDepartments(){
   const text = [state.chief, state.associated.join(' '), state.history.join(' ')].join(' ');
@@ -524,30 +922,31 @@ function mapDepartments(){
   return ds.length ? ds.slice(0,3) : ['全科医学科'];
 }
 function buildAdvice(level){
-  const base = {
+  return {
+    '待评估': [
+      '先休息、多喝水，观察症状变化。',
+      '饮食清淡，避免辛辣、油腻和饮酒。',
+      '如果症状加重或出现新的不舒服，及时去医院。'
+    ],
     '低危': [
-      '好好休息，保证充足睡眠，身体的自愈能力需要休息来恢复。',
-      '饮食清淡易消化，多喝温水，避免辛辣刺激和油腻食物。',
-      '可以适度活动，但不要过度劳累，保持心情放松。',
-      '观察 1-3 天，如果症状加重或出现新的不舒服，请及时去医院。'
+      '好好休息，保证充足睡眠。',
+      '饮食清淡易消化，多喝温水。',
+      '观察 1-3 天，加重或出现新症状及时就医。'
     ],
     '中危': [
-      '建议减少活动，多休息，避免剧烈运动、饮酒和情绪激动。',
-      '清淡饮食，少量多次喝水，注意监测体温和症状变化。',
-      '建议 24 小时内去医院门急诊做进一步检查，不要硬扛。',
-      '如果途中症状加重，请立即拨打 120。'
+      '减少活动，多休息，避免剧烈运动和饮酒。',
+      '清淡饮食，注意监测体温和症状变化。',
+      '24 小时内去医院门急诊做进一步检查。'
     ],
     '高危': [
-      '请立即停止一切活动，找一个安全的地方坐下或躺下，保持安静。',
-      '立即拨打 120 急救电话，或让身边的人护送您去最近医院的急诊科。',
-      '不要自己开车去医院，不要在家吃药观察，不要等症状自己缓解。',
-      '如果身边有人，请告诉他们您的症状，让他们协助您就医。'
+      '立即停止活动，坐下或躺下保持安静。',
+      '立即拨打 120，或让人护送您去最近的急诊科。',
+      '不要自己开车，不要在家吃药观察。'
     ]
   }[level];
-  return base;
 }
 function report(){
-  const { level, score, breakdown } = evaluate();
+  const { level, score, breakdown, infoComplete, infoTotal, missingFields } = evaluate();
   return {
     summary: {
       '主诉': state.chief, '持续时间': state.duration, '程度': state.severity,
@@ -557,68 +956,105 @@ function report(){
     emergencyTip: state.redFlags.length
       ? state.redFlags.map(h => `命中红旗规则 ${h.id}：${h.cat}（${h.matched}）`).join('；')
       : '未命中本地红旗急症规则',
-    risk: { level, score, max: 22, breakdown },
+    zone: ZONE[level],
+    risk: { level, score, max: 22, breakdown, infoComplete, infoTotal, missingFields },
+    causes: inferCauses(),
     advice: buildAdvice(level),
     departments: mapDepartments(),
     timing: TIMING[level],
     disclaimer: '本结果仅供健康咨询与导诊参考，不构成诊断或处方，不能替代医生面诊。'
-              + '如有胸痛、呼吸困难、意识不清等急症表现，请立即拨打 120 或前往最近医院急诊科。'
+              + '风险分区参考《急诊预检分诊专家共识》四级分诊标准；如有胸痛、呼吸困难、意识不清等急症表现，请立即拨打 120 或前往最近医院急诊科。'
   };
 }
 function joinUrl(base, path){
   return String(base || '').replace(/\/+$/, '') + path;
 }
+// 医疗安全清洗：去除诊断性结论与具体处方剂量（LLM 正常返回与正则回退均使用）
+function sanitizeMedicalReply(raw){
+  let s = String(raw || '');
+  // 提取代码块内的内容（而不是删掉整个代码块）
+  s = s.replace(/```(?:json|JSON|javascript|js)?\s*([\s\S]*?)```/g, '$1');
+  s = s.replace(/```/g, '');
+  // 默认不使用 emoji，避免聊天界面变得像客服机器人。
+  s = s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '');
+  s = s.replace(/^(?:AI|助手|医生)[：: ]+/i, '');
+  s = s.replace(/\s+/g, ' ').trim();
+  s = s.replace(/(确诊|你患的是|你就是得了|诊断为你|可以确定你得的是)[^，。；！？]*/g, '');
+  s = s.replace(/(每次\s*\d+\s*(?:mg|毫克|克|片|粒|毫升|ml)|每日\s*\d+\s*次|一天\s*\d+\s*次|建议服用|建议口服|具体用量|按这个剂量)[^，。；！？]*/g, '');
+  s = s.replace(/\s*([，。；！？])\s*/g, '$1').trim();
+
+  // 默认控制在 2-3 句话、约 60-120 字；从句号/问号处自然截断，不硬切半句话。
+  const parts = s.split(/(?<=[。！？!?])/).map(x => x.trim()).filter(Boolean).slice(0, 3);
+  s = parts.join('');
+  if (s.length > 120){
+    const cut = s.slice(0, 120);
+    const natural = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('？'), cut.lastIndexOf('！'), cut.lastIndexOf('?'), cut.lastIndexOf('!'));
+    s = (natural >= 45 ? cut.slice(0, natural + 1) : cut).trim();
+  }
+  return s;
+}
 function safeParseJSON(raw){
   if (!raw) return null;
   let t = String(raw).trim();
-  // 去除 BOM
   t = t.replace(/^\uFEFF/, '');
-  // 去除多层 markdown 代码块包裹（包括 ```json、```JSON、``` 等）
   t = t.replace(/^```(?:json|JSON|javascript|js)?\s*/i, '').replace(/```\s*$/, '').trim();
-  // 再去一次（防止嵌套）
   t = t.replace(/^```(?:json|JSON)?\s*/i, '').replace(/```\s*$/, '').trim();
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
   if (a === -1 || b === -1 || b < a) return null;
   t = t.slice(a, b + 1);
-  // 尝试 1：标准解析
-  try { return JSON.parse(t); } catch (_) {}
-  // 尝试 2：修复尾随逗号
-  try { return JSON.parse(t.replace(/,\s*([}\]])/g, '$1')); } catch (_) {}
-  // 尝试 3：修复智能引号
-  try { return JSON.parse(t.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'")); } catch (_) {}
-  // 尝试 4：修复字符串内未转义的换行符（把 JSON 字符串值中的裸换行替换为 \n）
-  try {
-    let fixed = t.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (m) => m.replace(/\n/g, '\\n').replace(/\r/g, '\\r'));
-    return JSON.parse(fixed);
-  } catch (_) {}
-  // 尝试 5：修复无引号的 key（JavaScript 对象字面量风格）
-  try {
-    const fixed = t.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*:)/g, '$1"$2"$3');
-    return JSON.parse(fixed);
-  } catch (_) {}
+  const attempts = [
+    (s) => s,
+    (s) => s.replace(/,\s*([}\]])/g, '$1'),
+    (s) => s.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'"),
+    (s) => s.replace(/[\u201c\u201d\u300c\u300d\u300e\u300f]/g, '"').replace(/[\u2018\u2019]/g, "'"),
+    (s) => s.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (m) => m.replace(/\n/g, '\\n').replace(/\r/g, '\\r')),
+    (s) => s.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*:)/g, '$1"$2"$3'),
+    (s) => {
+      const openN = (s.match(/\{/g) || []).length;
+      const closeN = (s.match(/\}/g) || []).length;
+      if (openN > closeN){
+        const g = s + '}'.repeat(openN - closeN);
+        try { return JSON.parse(g); } catch (_) {}
+      }
+      const m = s.match(/"((?:[^"\\]|\\.)*)$/);
+      if (m){
+        const cut = s.slice(0, m.index) + '"';
+        try { return JSON.parse(cut); } catch (_) {}
+        const cut2 = s.slice(0, m.index);
+        try { return JSON.parse(cut2); } catch (_) {}
+      }
+      throw new Error('truncated');
+    }
+  ];
+  for (const fn of attempts){
+    try { return JSON.parse(fn(t)); } catch (_) {}
+  }
   return null;
 }
-// JSON 解析失败时的回退：用正则从原始文本中提取字段
 function fallbackExtract(raw){
   if (!raw) return null;
   const t = String(raw);
   const out = { extract:{}, reply:'', emergency:false };
-  // 提取 reply 字段：找 "reply" 后面的字符串值
   const replyMatch = t.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
   if (replyMatch) out.reply = replyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
-  // 如果没找到 reply，尝试取最后一段自然语言作为回复
   if (!out.reply){
-    const lines = t.split(/\n/).map(l => l.trim()).filter(l => l && !l.startsWith('{') && !l.startsWith('}') && !l.startsWith('"') && l.length > 5);
-    if (lines.length) out.reply = lines.slice(-2).join(' ');
+    const loose = t.match(/"reply"\s*:\s*"([\s\S]*?)"\s*(?:[,}])/);
+    if (loose) out.reply = loose[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
   }
-  // 提取 emergency
+  if (!out.reply){
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    let rest = t;
+    if (a > -1 && b > a) rest = (t.slice(0, a) + ' ' + t.slice(b + 1)).trim();
+    // 去掉 markdown 代码块标记
+    rest = rest.replace(/```[\w]*\n?/g, '').replace(/```/g, '').trim();
+    if (rest && rest.length > 2) out.reply = rest;
+  }
+  if (out.reply) out.reply = sanitizeMedicalReply(out.reply);
   if (/"emergency"\s*:\s*true/.test(t)) out.emergency = true;
-  // 提取 extract 中的简单字符串字段
   ['chief','duration','severity','trigger','age'].forEach(k => {
     const m = t.match(new RegExp('"' + k + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"'));
     if (m && m[1]) out.extract[k] = m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
   });
-  // 提取数组字段（associated, history）
   ['associated','history'].forEach(k => {
     const m = t.match(new RegExp('"' + k + '"\\s*:\\s*\\[([^\\]]*)\\]'));
     if (m){
@@ -626,7 +1062,11 @@ function fallbackExtract(raw){
       if (items) out.extract[k] = items.map(s => s.slice(1,-1).replace(/\\"/g, '"'));
     }
   });
-  // 至少有 reply 才算有效回退
+  // 兜底：只要原文非空，就把清理后的全文当 reply，绝不返回 null
+  if (!out.reply){
+    const cleaned = sanitizeMedicalReply(t);
+    if (cleaned) out.reply = cleaned;
+  }
   if (!out.reply && !out.emergency && Object.keys(out.extract).length === 0) return null;
   return out;
 }
@@ -639,49 +1079,90 @@ function validateLLMOutput(o){
     ['chief','duration','severity','trigger','age'].forEach(k => { const v = S(o.extract[k]); if (v) out.extract[k] = v; });
     ['associated','history'].forEach(k => { const v = A(o.extract[k]); if (v.length) out.extract[k] = v; });
   }
-  if (typeof o.reply === 'string'){
-    out.reply = o.reply.replace(/```[\s\S]*?```/g,'').replace(/\s+/g,' ').trim().slice(0,300)
-      .replace(/(确诊|你患的是|就是[^，。]{0,6}病)/g,'')
-      .replace(/(可以吃|建议服用|口服|每次\d+mg|每日\d+次)[^，。]*/g,'');
-  }
+  if (typeof o.reply === 'string') out.reply = sanitizeMedicalReply(o.reply);
   out.emergency = o.emergency === true;
+  if (!out.reply && !out.emergency && Object.keys(out.extract).length === 0) return null;
   return out;
 }
-async function callLLM(messages, { timeout = 30000 } = {}){
+async function callLLM(messages, { timeout = 20000, skipFormat = false } = {}){
   const cfg = getConfig();
-  if (!IS_PROXY && !cfg.apiKey) throw Object.assign(new Error('NO_KEY'), { code:'NO_KEY' });
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeout);
-  const apiUrl = IS_PROXY ? '/api/chat' : joinUrl(cfg.baseUrl, '/chat/completions');
-  const reqHeaders = IS_PROXY
+  if (!isProxy() && !cfg.apiKey) throw Object.assign(new Error('NO_KEY'), { code:'NO_KEY' });
+
+  const apiUrl = isProxy() ? '/api/chat' : joinUrl(cfg.baseUrl, '/chat/completions');
+  const reqHeaders = isProxy()
     ? { 'Content-Type':'application/json' }
     : { 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.apiKey };
-  const reqBody = JSON.stringify({
-    model: cfg.model || 'deepseek-chat',
-    messages,
-    temperature: 0.2,
-    max_tokens: 1200
-  });
-  const doFetch = (withFormat) => {
+  const reqBody = { model: cfg.model || 'deepseek-chat', messages, temperature: 0.2, max_tokens: 600 };
+
+  const transientStatus = status => status === 408 || status === 425 || status === 429 || status >= 500;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const timeoutMs = Math.max(5000, Math.min(Number(timeout) || 20000, 15000));
+
+  async function doFetch(withFormat){
     const body = withFormat
-      ? JSON.stringify({ ...JSON.parse(reqBody), response_format: { type:'json_object' } })
+      ? { ...reqBody, response_format:{ type:'json_object' } }
       : reqBody;
-    return fetch(apiUrl, { method:'POST', headers: reqHeaders, body, signal: ctrl.signal });
-  };
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt++){
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const res = await fetch(apiUrl, {
+          method:'POST',
+          headers:reqHeaders,
+          body:JSON.stringify(body),
+          signal:ctrl.signal
+        });
+        if (transientStatus(res.status) && attempt < 3){
+          const retryAfter = Number(res.headers?.get?.('Retry-After') || 0);
+          const delay = retryAfter > 0
+            ? Math.min(2500, retryAfter * 1000)
+            : 450 * attempt;
+          log('LLM', `临时错误 HTTP ${res.status}，${delay}ms 后自动重试（${attempt}/2）`, 'warn');
+          await wait(delay);
+          continue;
+        }
+        return res;
+      } catch (e){
+        lastError = e;
+        if (e.name === 'AbortError' && attempt === 3) throw e;
+        if (attempt < 3){
+          const delay = 450 * attempt;
+          log('LLM', `${e.name === 'AbortError' ? '请求超时' : '网络异常'}，${delay}ms 后自动重试（${attempt}/2）`, 'warn');
+          await wait(delay);
+          continue;
+        }
+        throw e;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    throw lastError || Object.assign(new Error('FETCH_FAILED'), { code:'FETCH_FAILED' });
+  }
+
+  let res;
+  let usedFormat = !skipFormat;
   try {
-    let res;
     try {
-      res = await doFetch(true);
-      if (res.status === 400) res = await doFetch(false);
+      res = await doFetch(usedFormat);
+      // 部分 OpenAI 兼容接口不支持 response_format，400 时仅重试一次无格式请求
+      if (res.status === 400 && usedFormat){
+        res = await doFetch(false);
+        usedFormat = false;
+      }
     } catch (fetchErr) {
-      // fetch 本身失败（网络错误、CORS、代理未运行等）
-      if (fetchErr.name === 'AbortError') throw fetchErr;
-      const detail = IS_PROXY
+      if (fetchErr.name === 'AbortError'){
+        throw Object.assign(new Error('连接超时：模型未在限定时间内返回'), {
+          code:'TIMEOUT', detail:`单次请求超过 ${Math.round(timeoutMs/1000)} 秒`
+        });
+      }
+      const detail = isProxy()
         ? '无法连接本地代理服务，请确认 start_server.py 正在运行（端口 8765）'
         : '网络请求失败，可能是 CORS 跨域限制或网络不通。建议使用本地代理服务启动页面。';
       throw Object.assign(new Error('FETCH_FAILED: ' + detail), { code:'FETCH_FAILED', detail });
     }
-    if (!res.ok) {
+
+    if (!res.ok){
       let errMsg = 'HTTP_' + res.status;
       try {
         const d = await res.json();
@@ -689,113 +1170,163 @@ async function callLLM(messages, { timeout = 30000 } = {}){
         if (typeof msg === 'string') errMsg = msg.slice(0,150);
         else if (msg) errMsg = JSON.stringify(msg).slice(0,150);
       } catch(_){}
-      throw Object.assign(new Error(errMsg), { code: res.status });
+      throw Object.assign(new Error(errMsg), {
+        code:res.status,
+        transient:transientStatus(res.status)
+      });
     }
+
     const data = await res.json();
-    const raw = data?.choices?.[0]?.message?.content ?? '';
-    if (!raw && data?.error) {
-      throw Object.assign(new Error('API_ERROR: ' + (typeof data.error.message === 'string' ? data.error.message.slice(0,150) : JSON.stringify(data.error).slice(0,150))), { code:'API_ERROR' });
+    let raw = data?.choices?.[0]?.message?.content ?? '';
+    if (!raw){
+      const m = data?.choices?.[0]?.message;
+      if (m && typeof m === 'object'){
+        if (typeof m.reasoning_content === 'string' && m.reasoning_content) raw = m.reasoning_content;
+        else if (typeof m.text === 'string' && m.text) raw = m.text;
+        else if (Array.isArray(m.content)) raw = m.content.map(c => (c && (c.text || '')) || '').join('');
+      }
     }
-    return { raw, usage: data?.usage };
-  } finally { clearTimeout(timer); }
+    if (!raw && typeof data?.choices?.[0]?.text === 'string') raw = data.choices[0].text;
+    if (!raw && data?.error){
+      throw Object.assign(new Error('API_ERROR: ' + (typeof data.error.message === 'string'
+        ? data.error.message.slice(0,150) : JSON.stringify(data.error).slice(0,150))), { code:'API_ERROR' });
+    }
+    if (!raw){
+      throw Object.assign(new Error('EMPTY_RESPONSE: 模型返回内容为空'), {
+        code:'EMPTY_RESPONSE', body:JSON.stringify(data).slice(0,600)
+      });
+    }
+    return { raw, usage:data?.usage, usedFormat };
+  } finally {}
 }
-function buildMessages(userText){
+function buildMessages(userText, plainMode){
   const picked = {};
   ['chief','duration','severity','trigger','age'].forEach(k => { if (state.got[k]) picked[k] = state[k]; });
   if (state.got.associated) picked.associated = state.associated;
   if (state.got.history)    picked.history = state.history;
-  const hist = state.messages.slice(-6).map(m => ({
+  const hist = state.messages.filter(m => m.role !== 'sys').slice(-6).map(m => ({
     role: m.role === 'ai' ? 'assistant' : 'user',
     content: m.text
   }));
+  if (plainMode){
+    return [
+      { role:'system', content: '你是一位全科医生，正在线上问诊。用很短的口语回答患者，默认60-100字、最多3句话。不要输出JSON或代码，不用emoji，直接自然说话。先说重点，再问必要问题或给下一步；可以给初步方向，但不要说"确诊"。' },
+      ...hist,
+      { role:'user', content: userText }
+    ];
+  }
   return [
     { role:'system', content: SYSTEM_PROMPT },
-    { role:'system', content:`当前采集阶段：${state.stage}；已采集字段：${JSON.stringify(picked)}` },
+    { role:'system', content:`当前采集阶段：${state.stage}；已采集字段：${JSON.stringify(picked)}。请严格只输出 json 对象（格式见上一段指令），不要输出任何其他内容。` },
     ...hist,
     { role:'user', content: userText }
   ];
 }
+function tryParseLLM(raw){
+  let parsed = validateLLMOutput(safeParseJSON(raw));
+  if (!parsed) parsed = fallbackExtract(raw);
+  return parsed;
+}
 async function runLLM(userText){
   const cfg = getConfig();
   if (cfg.mode !== 'llm-first') return { source:'local' };
-  // 代理模式下密钥在服务端，用 serverConfig.hasKey 判断；非代理模式用 cfg.apiKey
-  const hasKey = IS_PROXY ? (serverConfig?.hasKey || !!cfg.apiKey) : !!cfg.apiKey;
-  if (!hasKey){ log('LLM','未配置密钥，使用本地规则引擎'); return { source:'local' }; }
+  const hasKey = isProxy() ? (serverConfig?.hasKey || !!cfg.apiKey) : !!cfg.apiKey;
+  if (!hasKey){
+    log('LLM','未配置密钥，使用本地规则引擎');
+    pushSysMsg('当前为大模型优先模式，但未检测到 API 密钥。请点右上角"设置"填写密钥后使用 AI 回答；本次先用本地规则引擎。');
+    return { source:'local' };
+  }
   setBusy(true);
+  // 三种策略依次尝试，解析失败时静默换策略重试，不弹错误
+  const strategies = [
+    { name:'json格式',  msgs: buildMessages(userText, false), skipFormat:false },
+    { name:'无格式',    msgs: buildMessages(userText, false), skipFormat:true  },
+    { name:'纯文本',    msgs: buildMessages(userText, true),  skipFormat:true  }
+  ];
+  let lastError = null;
   try {
-    const { raw } = await callLLM(buildMessages(userText), { timeout: cfg.timeoutMs });
-    console.log('[智诊通 LLM 原始返回]', raw);
-    let parsed = validateLLMOutput(safeParseJSON(raw));
-    let parseSource = 'json';
-    if (!parsed){
-      parsed = fallbackExtract(raw);
-      parseSource = 'fallback';
-      if (parsed) log('LLM', 'JSON 解析失败，已用正则回退提取字段');
+    for (let i = 0; i < strategies.length; i++){
+      const s = strategies[i];
+      try {
+        log('LLM', `第${i+1}次尝试（${s.name}）…`);
+        const { raw } = await callLLM(s.msgs, { timeout: cfg.timeoutMs, skipFormat: s.skipFormat });
+        const parsed = tryParseLLM(raw);
+        if (parsed){
+          if (i > 0) log('LLM', `第${i+1}次尝试（${s.name}）解析成功`);
+          if (parsed.extract) mergeFields(parsed.extract);
+          if (parsed.emergency){
+            emergency([{ id:'LLM-EMG', cat:'大模型判定急症/危机', matched:'emergency=true' }], 'llm');
+            return { source:'llm', emergency:true };
+          }
+          return { source:'llm', reply: parsed.reply };
+        }
+        log('LLM', `第${i+1}次尝试（${s.name}）解析失败，换下一个策略`);
+        if (i < strategies.length - 1) await new Promise(r => setTimeout(r, 500));
+      } catch (e){
+        lastError = e;
+        // 网络错误/空响应：不再继续换策略（callLLM内部已重试），直接跳出
+        if (e.code === 'FETCH_FAILED' || e.code === 'EMPTY_RESPONSE' || e.name === 'AbortError') break;
+        log('LLM', `第${i+1}次尝试出错（${e.code || e.name}），继续下一个策略`);
+      }
     }
-    if (!parsed) throw Object.assign(new Error('PARSE_FAIL'), { code:'PARSE_FAIL', raw: raw.slice(0,500) });
-    if (parsed.extract) mergeFields(parsed.extract);
-    if (parsed.emergency){
-      emergency([{ id:'LLM-EMG', cat:'大模型判定急症', matched:'大模型 emergency=true' }], 'llm');
-      return { source:'llm', emergency:true };
-    }
-    return { source:'llm', reply: parsed.reply };
+    // 全部策略失败
+    const e = lastError || Object.assign(new Error('PARSE_FAIL'), { code:'PARSE_FAIL' });
+    throw e;
   } catch (e){
     const code = e.code || e.name || e.message;
     const detail = e.detail || '';
     log('LLM', `调用失败（${code}），已回退本地规则引擎`, 'warn');
-    console.error('[智诊通 LLM 调用失败]', code, detail, e);
-    if (code === 'PARSE_FAIL'){
-      console.error('[智诊通 LLM 解析失败] 原始返回前500字:', e.raw);
-      pushSysMsg('⚠️ 大模型返回格式解析失败，已切换本地规则引擎。可按 F12 打开控制台查看 [智诊通 LLM 原始返回] 排查原因。');
+    if (code === 'EMPTY_RESPONSE'){
+      pushSysMsg('大模型返回空内容，已自动切换本地规则引擎。问诊不会中断。');
+    } else if (code === 'TIMEOUT'){
+      pushSysMsg('大模型响应超时，已自动切换本地规则引擎。问诊继续，不影响本次评估。');
     } else if (code === 'FETCH_FAILED' || e.name === 'TypeError'){
-      const hint = IS_PROXY
+      const hint = isProxy()
         ? '请确认本地代理服务正在运行（双击"启动智诊通.bat"），且端口 8765 未被占用。'
-        : '建议使用本地代理服务启动页面（双击"启动智诊通.bat"），可彻底解决跨域和网络问题。';
-      pushSysMsg(`⚠️ 大模型连接失败（${code}）。${hint} 已自动切换本地规则引擎，问诊继续。`);
+        : '建议使用本地代理服务启动页面，可减少跨域和网络波动。';
+      pushSysMsg(`大模型连接失败。${hint} 已自动切换本地规则引擎，问诊继续。`);
     } else if (code === 'NO_KEY'){
-      pushSysMsg('⚠️ 未配置 API 密钥，请在设置中配置后使用大模型。当前使用本地规则引擎。');
+      pushSysMsg('未配置 API 密钥，当前使用本地规则引擎。填写密钥后可启用大模型。');
+    } else if (code === 'PARSE_FAIL'){
+      pushSysMsg('大模型返回格式异常，已自动切换本地规则引擎。问诊继续。');
     } else {
-      pushSysMsg(`⚠️ 大模型不可用（${code}），已自动切换本地规则引擎，问诊继续。`);
+      pushSysMsg(`大模型暂时不可用${detail ? '：' + detail : ''}，已自动切换本地规则引擎，问诊继续。`);
     }
     return { source:'fallback', reason: code };
   } finally { setBusy(false); }
 }
 async function testConnection(){
   const cfg = getConfig();
-  if (!IS_PROXY && !cfg.apiKey) return { ok:false, error:'请先输入 API 密钥' };
-  if (!IS_PROXY && !cfg.baseUrl) return { ok:false, error:'请先填写接口地址' };
+  if (!isProxy() && !cfg.apiKey) return { ok:false, error:'请先输入 API 密钥' };
+  if (!isProxy() && !cfg.baseUrl) return { ok:false, error:'请先填写接口地址' };
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), cfg.testTimeoutMs);
   const t0 = Date.now();
-  const hint = (code) => {
-    const map = {
-      401:'API 密钥无效或已过期，请检查密钥是否正确、是否有余额',
-      403:'密钥无权限或被封禁，请联系接口提供方',
-      404:'接口地址路径不对，请确认 Base URL 末尾是否需要 /v1',
-      429:'请求过于频繁或额度已用完，请稍后重试或充值',
-      500:'接口服务端内部错误，请稍后重试',
-      502:'接口网关错误，服务可能正在维护'
-    };
-    return map[code] || '';
-  };
-  // 代理模式：走本地 /api/models，无 CORS 问题
-  const modelsUrl = IS_PROXY ? '/api/models' : joinUrl(cfg.baseUrl, '/models');
-  const modelsHeaders = IS_PROXY ? {} : { 'Authorization':'Bearer ' + cfg.apiKey };
+  const hint = (code) => ({
+    401:'API 密钥无效或已过期，请检查密钥是否正确、是否有余额',
+    403:'密钥无权限或被封禁，请联系接口提供方',
+    404:'接口地址路径不对，请确认 Base URL 末尾是否需要 /v1',
+    429:'请求过于频繁或额度已用完，请稍后重试或充值',
+    500:'接口服务端内部错误，请稍后重试',
+    502:'接口网关错误，服务可能正在维护'
+  })[code] || '';
+  const modelsUrl = isProxy() ? '/api/models' : joinUrl(cfg.baseUrl, '/models');
+  const modelsHeaders = isProxy() ? {} : { 'Authorization':'Bearer ' + cfg.apiKey };
   try {
     let res = await fetch(modelsUrl, { headers: modelsHeaders, signal: ctrl.signal });
     const latency = Date.now() - t0;
     if (res.status === 404){
-      const chatUrl = IS_PROXY ? '/api/chat' : joinUrl(cfg.baseUrl, '/chat/completions');
-      const chatHeaders = IS_PROXY ? { 'Content-Type':'application/json' } : { 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.apiKey };
+      const chatUrl = isProxy() ? '/api/chat' : joinUrl(cfg.baseUrl, '/chat/completions');
+      const chatHeaders = isProxy()
+        ? { 'Content-Type':'application/json' }
+        : { 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.apiKey };
       try {
         const res2 = await fetch(chatUrl, {
           method:'POST', headers: chatHeaders,
           body: JSON.stringify({ model: cfg.model || 'deepseek-chat', messages:[{role:'user',content:'hi'}], max_tokens:5 }),
           signal: ctrl.signal
         });
-        if (res2.ok){
-          return { ok:true, latency:Date.now()-t0, models:[cfg.model || 'unknown'], note:'该接口不支持 /models，已通过 chat 接口验证可用' };
-        }
+        if (res2.ok) return { ok:true, latency:Date.now()-t0, models:[cfg.model || 'unknown'], note:'该接口不支持 /models，已通过 chat 接口验证可用' };
         return { ok:false, error:`HTTP ${res2.status}`, detail: hint(res2.status), latency };
       } catch(e2){
         return { ok:false, error: e2.name === 'AbortError' ? '连接超时' : '网络不可达', latency };
@@ -812,7 +1343,7 @@ async function testConnection(){
     return { ok:true, latency, models:(data?.data || []).map(m => m.id).filter(Boolean) };
   } catch (e){
     if (e.name === 'AbortError') return { ok:false, error:'连接超时（12秒）', detail:'请检查网络是否能访问该接口地址' };
-    if (IS_PROXY) return { ok:false, error:'本地代理服务未响应', detail:'请确认 start_server.py 正在运行，且端口 8765 未被占用' };
+    if (isProxy()) return { ok:false, error:'本地代理服务未响应', detail:'请确认 start_server.py 正在运行，且端口 8765 未被占用' };
     return { ok:false, error:'网络不可达或跨域(CORS)受限', detail:'从本地 file:// 页面调用外部接口时，部分浏览器或接口服务端会拦截跨域请求。建议使用本地代理服务启动页面。' };
   } finally { clearTimeout(timer); }
 }
@@ -823,50 +1354,78 @@ function emergency(hits, source){
   state.done = true;
   state.busy = false;
   state.stage = 'done';
-  log('EMERGENCY', `★ 红旗拦截（来源：${source}）：` + hits.map(h => `${h.id}/${h.matched}`).join('；'), 'err');
-  $('#emgBanner').classList.add('show');
+  log('EMERGENCY', `红旗拦截（来源：${source}）：` + hits.map(h => `${h.id}/${h.matched}`).join('；'), 'err');
+  const banner = $('#emgBanner');
+  banner.textContent = '已检测到危及生命的紧急情况 — 请立即停止活动，拨打 120 或就近急诊，不要自行驾车、不要在家服药观察';
+  banner.classList.remove('crisis');
+  banner.classList.add('show');
   $('#input').disabled = true;
   $('#btnSend').disabled = true;
   $('#chips').innerHTML = '';
-  renderResult(true);
+  pushResultCard(buildEmergHTML(), false);
+  const cards = $('#cardSlot').querySelectorAll('.msg.card');
+  if (cards.length) cards[cards.length - 1].classList.add('locked-card');
+}
+function crisisIntervene(hits){
+  playUISound('alert');
+  state.redFlags = hits;
+  state.crisis = true;
+  log('CRISIS', '心理危机信号：' + hits.map(h => h.matched).join('；'), 'err');
+  const banner = $('#emgBanner');
+  banner.textContent = '如果你可能伤害自己，请立即拨打 120/110 或全国心理援助热线 12356，并请身边信任的人陪伴';
+  banner.classList.add('show', 'crisis');
+  pushResultCard(buildCrisisHTML(), false);
+  const cards = $('#cardSlot').querySelectorAll('.msg.card');
+  if (cards.length) cards[cards.length - 1].classList.add('locked-card');
 }
 function log(type, msg, level){
   const time = new Date().toLocaleTimeString('zh-CN', { hour12:false });
   state.engineLog.push({ time, type, msg, level });
   if (state.engineLog.length > 200) state.engineLog.shift();
-  const box = $('#engineLog');
-  if (!box) return;
-  const d = el('div', level === 'err' ? 'err' : level === 'warn' ? 'warn' : '');
-  d.textContent = `[${time}] ${type} · ${msg}`;
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
+}
+function nowHM(){
+  return new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', hour12:false });
 }
 function pushMsg(role, text){
   state.messages.push({ role, text });
   const wrap = el('div', 'msg ' + role);
-  wrap.appendChild(el('div', 'bubble', escapeHtml(text)));
+  if (role === 'ai'){
+    const av = el('div', 'avatar');
+    av.innerHTML = AVATAR_SVG;
+    wrap.appendChild(av);
+  }
+  const bub = el('div', 'bubble');
+  bub.textContent = text;
+  wrap.appendChild(bub);
+  if (role !== 'sys') bub.appendChild(el('span', 'time', nowHM()));
+  if (role === 'user'){
+    const av = el('div', 'avatar');
+    av.innerHTML = USER_SVG;
+    wrap.appendChild(av);
+  }
   $('#chatLog').appendChild(wrap);
   $('#chatLog').scrollTop = $('#chatLog').scrollHeight;
+  if (role === 'ai' && state.messages.some(m => m.role === 'user')) playUISound('receive');
+}
+function showTyping(){
+  const wrap = el('div', 'msg ai');
+  const av = el('div', 'avatar');
+  av.innerHTML = AVATAR_SVG;
+  wrap.appendChild(av);
+  const bub = el('div', 'bubble');
+  bub.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
+  wrap.appendChild(bub);
+  wrap.dataset.typing = '1';
+  $('#chatLog').appendChild(wrap);
+  $('#chatLog').scrollTop = $('#chatLog').scrollHeight;
+  return wrap;
+}
+function hideTyping(wrap){
+  if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
 }
 function pushSysMsg(text){ pushMsg('sys', text); }
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}
-function renderFields(){
-  const box = $('#fieldList');
-  if (!box) return;
-  box.innerHTML = '';
-  const rows = [
-    ['主诉', state.chief], ['持续时间', state.duration], ['程度', state.severity],
-    ['伴随症状', state.associated.join('、')], ['诱因缓解', state.trigger],
-    ['既往史', state.history.join('、')], ['年龄段', state.age]
-  ];
-  for (const [k, v] of rows){
-    const f = el('div', 'field');
-    f.appendChild(el('div', 'k', k));
-    f.appendChild(el('div', 'v' + (v ? '' : ' empty'), v ? escapeHtml(v) : '待采集'));
-    box.appendChild(f);
-  }
 }
 function renderChips(){
   if (state.locked) { $('#chips').innerHTML = ''; return; }
@@ -877,18 +1436,15 @@ function renderChips(){
   script.opts.forEach(o => {
     const b = el('button', 'chip', escapeHtml(o));
     b.disabled = state.busy;
+    b.type = 'button';
     b.onclick = () => submit(o);
     box.appendChild(b);
   });
 }
-function renderResult(isEmg){
-  const card = $('#resultCard');
-  const body = $('#resultBody');
-  card.classList.add('show');
-  if (isEmg){
-    card.classList.add('emg');
-    body.innerHTML = `
-      <div class="emg-title">⚠️ 检测到可能危及生命的紧急情况</div>
+function buildEmergHTML(){
+  return `
+    <div class="result-in-chat emg">
+      <div class="emg-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>检测到可能危及生命的紧急情况</div>
       <div class="emg-box">
         <div style="font-weight:600;">请立即停止活动，拨打 120 或由他人护送前往最近医院急诊科。</div>
         <ul>
@@ -901,120 +1457,279 @@ function renderResult(isEmg){
       <div style="margin-top:12px;font-size:13px;">
         <b>命中依据：</b>${escapeHtml(state.redFlags.map(h => `${h.id} / ${h.cat} / ${h.matched}`).join('；'))}
       </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" id="btnEmgRestart" type="button" style="width:100%;">误报？开始一次新的问诊</button>
+      </div>
       <div class="disclaimer">
         本提示由<strong>本地安全规则引擎</strong>生成，优先级高于任何 AI 回复。<br>
         本结果仅供健康咨询与导诊参考，不构成诊断或处方，不能替代医生面诊。
-      </div>`;
-    return;
-  }
-  const r = report();
-  card.classList.remove('emg');
-  const cls = r.risk.level === '高危' ? 'high' : r.risk.level === '中危' ? 'mid' : 'low';
-  const color = r.risk.level === '高危' ? 'var(--high)' : r.risk.level === '中危' ? 'var(--mid)' : 'var(--low)';
-  const pct = Math.round(r.risk.score / r.risk.max * 100);
-  const summaryRows = Object.entries(r.summary).map(([k, v]) => {
-    const val = Array.isArray(v) ? (v.join('、') || '未提供') : (v || '未提供');
-    return `<div class="field"><div class="k">${k}</div><div class="v">${escapeHtml(val)}</div></div>`;
-  }).join('');
-  const dims = [['程度 severity','×2'],['起病急缓 onset','×2'],['年龄 age','×1'],['基础病 comorbid','×1'],['伴随预警 warning','×2']]
-    .map(([label, w], i) => {
-      const key = ['severity','onset','age','comorbid','warning'][i];
-      return `<div class="dim"><span>${label}（${w}）</span><span>${r.risk.breakdown[key]}</span></div>`;
-    }).join('');
-  body.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <span class="badge ${cls}">${r.risk.level}</span>
-      <span style="margin-left:8px;color:var(--sub);font-size:13px;">风险评分 ${r.risk.score} / ${r.risk.max}</span>
-    </div>
-    <div class="scorebar"><i style="width:${pct}%;background:${color};"></i></div>
-    <div style="margin:10px 0 14px;">${dims}</div>
-    <div style="font-weight:600;margin:12px 0 6px;">① 病情摘要</div>
-    <div class="field-list">${summaryRows}</div>
-    <div style="font-weight:600;margin:14px 0 6px;">② 急症提示</div>
-    <div style="font-size:13px;">${escapeHtml(r.emergencyTip)}</div>
-    <div style="font-weight:600;margin:14px 0 6px;">③ 健康建议</div>
-    <ul style="margin:0;padding-left:20px;font-size:13px;">${r.advice.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
-    <div style="font-weight:600;margin:14px 0 6px;">④ 推荐科室与就医时机</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
-      ${r.departments.map(d => `<span style="background:#EEF7F5;color:var(--primary);border-radius:999px;padding:3px 12px;font-size:12.5px;">${escapeHtml(d)}</span>`).join('')}
-    </div>
-    <div style="font-size:13px;">${escapeHtml(r.timing)}</div>
-    <div style="font-weight:600;margin:14px 0 6px;">⑤ 反馈</div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn" style="background:#EEF7F5;color:var(--primary);" onclick="window.__fb(1)">👍 有帮助</button>
-      <button class="btn" style="background:#FFF0F0;color:var(--high);" onclick="window.__fb(0)">👎 无帮助</button>
-    </div>
-    <div class="disclaimer">${escapeHtml(r.disclaimer)}</div>`;
+      </div>
+    </div>`;
 }
-window.__fb = function(v){ pushSysMsg(v ? '感谢反馈 👍（本次会话不落盘）' : '感谢反馈 👎，请以线下医生面诊为准'); };
+function buildCrisisHTML(){
+  return `
+    <div class="result-in-chat crisis">
+      <div class="crisis-title">我很担心你现在的安全</div>
+      <div style="font-size:13.5px;line-height:1.9;margin-top:6px;">
+        如果你正在想伤害自己，或者觉得已经撑不住了，请立刻做这几件事：
+        <ul style="margin:8px 0 0;padding-left:20px;">
+          <li>拨打 <b>120</b> 或 <b>110</b>，直接说你现在的位置和情况</li>
+          <li>拨打全国心理援助热线 <b>12356</b>（24 小时免费、保密）</li>
+          <li>告诉一位你信任的家人或朋友，让他们现在过来陪你</li>
+          <li>远离刀具、药物、窗户、高处等危险物品，不要独处</li>
+        </ul>
+      </div>
+      <div style="font-size:13px;margin-top:10px;color:#5C7A6F;">
+        有这种念头不代表你不正常，很多人都经历过。你也可以继续在这里跟我说说话，我在听。
+      </div>
+      <div class="disclaimer">
+        本提示由<strong>本地安全规则引擎</strong>生成。若你是在替别人咨询，也请尽快陪同对方并拨打上述电话。
+      </div>
+    </div>`;
+}
+function buildSummaryLine(){
+  const parts = [];
+  if (state.chief) parts.push(state.chief);
+  // 时长若已包含在主诉文本中则不重复
+  if (state.duration && state.duration !== '未说明' && (!state.chief || !state.chief.includes(state.duration))){
+    parts.push(state.duration);
+  }
+  if (state.severity && state.severity !== '未说明') parts.push(state.severity + '程度');
+  // 伴随症状若已在主诉中出现则不重复
+  const assoc = state.associated.filter(x => x && !x.startsWith('无') && (!state.chief || !state.chief.includes(x)));
+  if (assoc.length) parts.push('伴' + assoc.join('、'));
+  if (!parts.length) return '信息收集中，请继续描述您的不适。';
+  return parts.join('，') + '。';
+}
+function buildResultHTML(updated){
+  const r = report();
+  const causes = r.causes.length ? r.causes : [];
+  const primary = causes[0] || '信息不足，继续描述后判断';
+  const differentials = causes.slice(1, 3);
+  const advice = r.advice.slice(0, 2).join('；');
+  const dept = r.departments.join('、');
+  const diffText = differentials.length ? '需排除：' + differentials.join('、') : '';
+  return `
+    <div class="result-in-chat">
+      <div class="rc-head"><span class="title">${r.risk.level}</span> <span class="zone ${r.zone.cls}">${r.zone.tag}</span></div>
+      <div class="rc-line"><span class="rc-k">病情</span>${escapeHtml(buildSummaryLine())}</div>
+      <div class="rc-line"><span class="rc-k">初步判断</span>更像：${escapeHtml(primary)}${diffText ? '。' + escapeHtml(diffText) : ''}</div>
+      <div class="rc-line"><span class="rc-k">建议</span>${escapeHtml(advice)}；${escapeHtml(dept)}，${escapeHtml(r.timing)}</div>
+      <div class="rc-disclaimer">初步判断仅供参考，不能替代医生面诊确诊。</div>
+    </div>`;
+}
+const AVATAR_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+const USER_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+function pushResultCard(html, isUpdate){
+  const slot = $('#cardSlot');
+  const hostCard = slot.closest('.card');
+  if (hostCard) hostCard.classList.add('has-result');
+  let wrap = slot.querySelector('.msg.card:not(.locked-card)');
+  if (wrap){
+    const bub = wrap.querySelector('.bubble');
+    if (bub) bub.innerHTML = html;
+  } else {
+    wrap = el('div', 'msg ai card');
+    const av = el('div','avatar'); av.innerHTML = AVATAR_SVG;
+    wrap.appendChild(av);
+    const bub = el('div','bubble');
+    bub.innerHTML = html;
+    wrap.appendChild(bub);
+    slot.appendChild(wrap);
+    slot.style.display = 'block';
+    state.messages.push({ role:'ai', text:'[评估结果卡]' });
+  }
+}
+function snapshotFields(){
+  return JSON.stringify({
+    chief: state.chief, duration: state.duration, severity: state.severity,
+    associated: [...state.associated].sort(), trigger: state.trigger,
+    history: [...state.history].sort(), age: state.age
+  });
+}
 function renderAll(){
-  renderFields();
   renderChips();
   $('#input').disabled = state.locked || state.busy;
   $('#btnSend').disabled = state.locked || state.busy;
   const cfg = getConfig();
-  const hasKey = IS_PROXY ? (serverConfig?.hasKey || !!cfg.apiKey) : !!cfg.apiKey;
+  const hasKey = isProxy() ? (serverConfig?.hasKey || !!cfg.apiKey) : !!cfg.apiKey;
   const modeLabel = cfg.mode === 'llm-first'
     ? (hasKey ? '大模型 · ' + cfg.model : '大模型（未配置密钥）')
     : '本地规则引擎';
-  $('#modeTag').textContent = IS_PROXY ? '🔗 ' + modeLabel : modeLabel;
+  $('#modeTag').textContent = isProxy() ? '代理 · ' + modeLabel : modeLabel;
+  renderSoundButton();
 }
 function setBusy(b){ state.busy = b; renderAll(); }
+function focusComposer(){
+  const input = $('#input');
+  if (!input || input.disabled) return;
+  const schedule = (window.requestAnimationFrame || ((fn) => setTimeout(fn, 0)));
+  schedule(() => {
+    try { input.focus({ preventScroll:true }); }
+    catch (_) { try { input.focus(); } catch (_) {} }
+  });
+}
+function greet(){
+  pushMsg('ai', '您好，我是智诊通AI助手。' + STAGE_SCRIPTS.chief.q);
+  pushSysMsg('急症（胸痛、呼吸困难、意识不清等）请直接拨打120。');
+}
+function resetSession(){
+  const wasLocked = state.locked || state.crisis;
+  state = freshState();
+  $('#chatLog').innerHTML = '';
+  $('#cardSlot').innerHTML = '';
+  $('#cardSlot').style.display = 'none';
+  const hostCard = $('#cardSlot').closest('.card');
+  if (hostCard) hostCard.classList.remove('has-result');
+  $('#chips').innerHTML = '';
+  const banner = $('#emgBanner');
+  banner.classList.remove('show', 'crisis');
+  banner.textContent = '已检测到危及生命的紧急情况 — 请立即停止活动，拨打 120 或就近急诊，不要自行驾车、不要在家服药观察';
+  $('#input').disabled = false;
+  $('#btnSend').disabled = false;
+  $('#input').value = '';
+  log('SYS', wasLocked ? '已开始新的问诊会话' : '会话已重置');
+  renderAll();
+  greet();
+}
 async function submit(rawText){
   const text = String(rawText || '').trim();
   if (!text || state.locked || state.busy) return;
+  // 敏感信息拦截：不发送、不入对话
+  const sens = findSensitive(text);
+  if (sens){
+    pushSysMsg(`检测到疑似${sens}，为保护您的隐私，本条消息未发送。请删除${sens}后重新描述症状；本页面不会保存您的个人信息。`);
+    $('#input').value = '';
+    focusComposer();
+    return;
+  }
   $('#input').value = '';
-  const { hit, hits } = redFlag(text);
+  const s0 = state.stage;
+  const rf = redFlag(text);
   pushMsg('user', text);
-  if (hit){
-    pushSysMsg('🚨 检测到危及生命的急症信号，已停止常规问诊。');
-    emergency(hits, 'local');
+  playUISound('send');
+  // 心理危机与躯体急症分流：同时出现时按躯体急症锁定处理
+  const crisisHits = rf.hits.filter(h => h.id === 'RF-PS-01');
+  const emgHits = rf.hits.filter(h => h.id !== 'RF-PS-01');
+  if (emgHits.length){
+    playUISound('alert');
+    pushSysMsg('检测到危及生命的急症信号，已停止常规问诊。');
+    if (crisisHits.length) emgHits.push(...crisisHits);
+    emergency(emgHits, 'local');
     renderAll();
     return;
   }
-  log('RULE', `红旗筛查通过（未命中）`);
-  state.asked.add(state.stage);
+  if (crisisHits.length){
+    crisisIntervene(crisisHits);
+    renderAll();
+    // 危机不锁死对话，继续常规字段采集
+  } else {
+    log('RULE', `红旗筛查通过（未命中）`);
+  }
   let reply = '';
+  const before = snapshotFields();
   const cfg = getConfig();
-  const hasKey = IS_PROXY ? (serverConfig?.hasKey || !!cfg.apiKey) : !!cfg.apiKey;
+  const hasKey = isProxy() ? (serverConfig?.hasKey || !!cfg.apiKey) : !!cfg.apiKey;
   if (cfg.mode === 'llm-first' && hasKey){
-    const r = await runLLM(text);
+    const typingWrap = showTyping();
+    let r;
+    try {
+      r = await runLLM(text);
+    } catch (e) {
+      log('LLM', `未预期异常（${e?.code || e?.name || 'UNKNOWN'}），强制回退本地规则引擎`, 'err');
+      r = { source:'fallback', reason:e?.code || e?.name || 'UNKNOWN' };
+    } finally {
+      hideTyping(typingWrap);
+    }
     if (r.emergency){ renderAll(); return; }
-    if (r.source !== 'llm') mergeFields(extractLocal(text, state.stage));
-    if (r.reply) reply = r.reply;
+    // 本地规则抽取始终并行补位，避免大模型漏抽字段
+    mergeFields(extractLocal(text, s0));
+    if (r.source === 'llm') reply = r.reply;
     log('LLM', `来源：${r.source}`);
   } else {
-    mergeFields(extractLocal(text, state.stage));
+    mergeFields(extractLocal(text, s0));
     log('RULE', '本地规则引擎完成字段抽取');
   }
-  if (state.asked.has(state.stage)) state.got[state.stage] = true;
+  // 当前阶段两轮仍无有效信息：记录"未说明"并推进，避免死循环
+  if (!state.got[s0] && s0 !== 'chief'){
+    state.askCounts[s0] = (state.askCounts[s0] || 0) + 1;
+    if (state.askCounts[s0] >= 2){
+      if (s0 === 'associated') state.associated = [NONE_MARKER.associated];
+      else if (s0 === 'history') state.history = [NONE_MARKER.history];
+      else state[s0] = '未说明';
+      state.got[s0] = true;
+      log('FSM', `${STAGE_LABELS[s0]}两轮未获得有效信息，记为未说明`);
+    }
+  }
+  if (state.got[s0]) state.askCounts[s0] = 0;
+  const changed = snapshotFields() !== before;
   state.stage = nextStage();
-  renderFields();
-  if (state.stage === 'done'){
+  const coreDone = state.stage === 'done';
+  if (coreDone){
     const { level, score } = evaluate();
     log('RULE', `评分定级：${level}（${score}/22）`);
-    renderResult(false);
-    state.done = true; state.locked = true;
-    pushMsg('ai', '问诊信息已采集完成，结果卡已生成。请查看右侧风险分层与就医建议。');
+  }
+  // 只要主诉采集到就出初步评估卡，后续随信息实时更新
+  if (!coreDone && !state.got.chief){
+    const script = STAGE_SCRIPTS[state.stage];
+    pushMsg('ai', reply || script.q);
+    log('FSM', `阶段推进 → ${state.stage}`);
     renderAll();
     return;
   }
-  const script = STAGE_SCRIPTS[state.stage];
-  const ask = reply || script.q;
-  pushMsg('ai', ask);
-  log('FSM', `阶段推进 → ${state.stage}`);
+  if (!state.cardShown){
+    pushResultCard(buildResultHTML(false), false);
+    state.cardShown = true;
+    pushMsg('ai', reply || '初步评估如下，继续补充我会随时更新。');
+  } else if (changed){
+    pushResultCard(buildResultHTML(true), true);
+    if (reply){
+      pushMsg('ai', reply);
+    } else if (coreDone){
+      pushMsg('ai', '已更新评估。');
+    } else {
+      const script = STAGE_SCRIPTS[state.stage];
+      pushMsg('ai', script ? script.q : '已更新评估。请继续说。');
+    }
+  } else {
+    if (coreDone){
+      pushMsg('ai', reply || '记下了。还有补充吗？');
+    } else {
+      const script = STAGE_SCRIPTS[state.stage];
+      pushMsg('ai', reply || (script ? script.q : '请继续说。'));
+    }
+  }
+  log('FSM', `阶段：${state.stage}，卡片：${state.cardShown ? '已出' : '未出'}`);
   renderAll();
+  focusComposer();
 }
+$('#btnSend').addEventListener('mousedown', e => {
+  if (!state.locked && !state.busy) e.preventDefault();
+});
 $('#btnSend').onclick = () => submit($('#input').value);
-$('#input').addEventListener('keydown', e => { if (e.key === 'Enter') submit($('#input').value); });
+$('#input').addEventListener('keydown', e => {
+  // 中文输入法组词过程中的回车只确认候选词，不发送
+  if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) submit($('#input').value);
+});
+$('#btnRestart').onclick = () => resetSession();
+document.addEventListener('pointerdown', () => primeAudio(), { passive:true, capture:true });
+document.addEventListener('keydown', e => { if (e.isTrusted) primeAudio(); }, { capture:true });
+document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'btnEmgRestart') resetSession();
+});
+$('#btnSound').onclick = () => {
+  soundEnabled = !soundEnabled;
+  saveSoundPreference();
+  renderSoundButton();
+  if (soundEnabled) playUISound('confirm');
+};
 $('#btnSettings').onclick = async () => {
-  if (IS_PROXY) await loadServerConfig();
+  if (!proxyReady) await loadServerConfig();
   const cfg = getConfig();
   $('#cfgMode').value = cfg.mode;
   $('#cfgBaseUrl').value = cfg.baseUrl || '';
   $('#cfgModel').value = cfg.model || '';
-  // 代理模式下不回显密钥（安全），用占位符提示
-  if (IS_PROXY) {
+  if (isProxy()) {
     const hasKey = serverConfig?.hasKey;
     $('#cfgApiKey').value = '';
     $('#cfgApiKey').placeholder = hasKey
@@ -1026,8 +1741,10 @@ $('#btnSettings').onclick = async () => {
   }
   $('#settingsMask').classList.add('show');
 };
-$('#btnCloseCfg').onclick = () => $('#settingsMask').classList.remove('show');
+const closeSettings = () => $('#settingsMask').classList.remove('show');
+$('#btnCloseCfg').onclick = closeSettings;
 document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.type = 'button';
   btn.onclick = () => {
     const p = PRESETS[btn.dataset.provider];
     if (!p) return;
@@ -1041,6 +1758,13 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 $('#btnHelp').onclick = () => $('#helpMask').classList.add('show');
 $('#btnCloseHelp').onclick = () => $('#helpMask').classList.remove('show');
 $('#helpMask').addEventListener('click', e => { if (e.target.id === 'helpMask') $('#helpMask').classList.remove('show'); });
+$('#settingsMask').addEventListener('click', e => { if (e.target.id === 'settingsMask') closeSettings(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){
+    $('#helpMask').classList.remove('show');
+    $('#settingsMask').classList.remove('show');
+  }
+});
 $('#btnSaveCfg').onclick = () => {
   saveConfig({
     baseUrl: $('#cfgBaseUrl').value.trim() || DEFAULT_CFG.baseUrl,
@@ -1048,10 +1772,10 @@ $('#btnSaveCfg').onclick = () => {
     model: $('#cfgModel').value.trim() || DEFAULT_CFG.model,
     mode: $('#cfgMode').value
   });
-  log('CFG','配置已保存（仅本机浏览器）');
+  log('CFG','配置已保存');
   renderAll();
   $('#settingsMask').classList.remove('show');
-  pushSysMsg('✅ 配置已保存到本机浏览器。');
+  pushSysMsg('配置已保存。');
 };
 $('#btnToggleKey').onclick = () => {
   const inp = $('#cfgApiKey');
@@ -1061,11 +1785,9 @@ $('#btnToggleKey').onclick = () => {
 };
 $('#btnClearKey').onclick = () => {
   $('#cfgApiKey').value = '';
-  if (IS_PROXY) {
-    // 代理模式：通知服务端清除密钥
+  if (isProxy()) {
     fetch('/api/config', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
+      method:'POST', headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ clearKey: true })
     }).then(() => { serverConfig = null; return loadServerConfig(); }).catch(()=>{});
   } else {
@@ -1084,27 +1806,29 @@ $('#btnTest').onclick = async () => {
   $('#testResult').textContent = '测试中…';
   const r = await testConnection();
   if (r.ok){
-    $('#testResult').innerHTML = `<span style="color:var(--low);">✅ 连接成功（${r.latency} ms）${r.note ? '：' + escapeHtml(r.note) : ''}</span>`;
+    $('#testResult').innerHTML = `<span style="color:var(--low);">连接成功（${r.latency} ms）${r.note ? '：' + escapeHtml(r.note) : ''}</span>`;
     const dl = $('#modelList'); dl.innerHTML = '';
     (r.models || []).slice(0, 50).forEach(m => dl.appendChild(el('option', null, escapeHtml(m))));
   } else {
-    $('#testResult').innerHTML = `<span style="color:var(--high);">❌ ${escapeHtml(r.error)}${r.latency ? '（' + r.latency + ' ms）' : ''}</span>` +
+    $('#testResult').innerHTML = `<span style="color:var(--high);">连接失败：${escapeHtml(r.error)}${r.latency ? '（' + r.latency + ' ms）' : ''}</span>` +
       (r.detail ? `<div style="color:var(--sub);margin-top:4px;font-size:12px;">${escapeHtml(r.detail)}</div>` : '') +
       `<div style="color:var(--sub);margin-top:4px;font-size:12px;">问诊将自动回退到本地规则引擎，不影响使用。</div>`;
   }
 };
 (async function init(){
-  if (IS_PROXY) {
-    await loadServerConfig();
+  loadSoundPreference();
+  renderSoundButton();
+  await loadServerConfig();
+  if (isProxy()) {
     log('SYS', '代理模式已启用：API 通过本地代理转发，无 CORS 限制，支持手机端访问');
   }
   log('SYS','本地规则引擎已加载，红旗筛查优先级最高');
   const cfg = getConfig();
   log('SYS', `运行方式：${cfg.mode === 'llm-first' ? '大模型优先（失败自动回退本地）' : '仅本地规则引擎'}`);
-  if (cfg.mode === 'llm-first' && !cfg.apiKey && !IS_PROXY) log('SYS','未配置 API 密钥，将以本地规则引擎运行','warn');
+  if (cfg.mode === 'llm-first' && !cfg.apiKey && !isProxy()) log('SYS','未配置 API 密钥，将以本地规则引擎运行','warn');
   renderAll();
-  pushMsg('ai', '您好，我是智诊通健康助手 🩺\n\n我会通过对话了解您的不适，帮您梳理症状、判断风险轻重，并给出就医建议。我不是医生，不做诊断、不开处方，但会尽力为您提供有价值的参考。\n\n' + STAGE_SCRIPTS.chief.q);
-  pushSysMsg('💡 小贴士：首次使用可点右上角"帮助"查看使用指南。急症请立即拨打 120，不要等待问诊结果。');
+  greet();
+  focusComposer();
 })();
 </script>
 </body>
